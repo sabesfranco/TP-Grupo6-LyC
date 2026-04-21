@@ -1,39 +1,208 @@
 package lyc.compiler;
 
 import java_cup.runtime.*;
+import lyc.compiler.model.SymbolTable;
+import lyc.compiler.model.SymbolEntry;
+import lyc.compiler.model.SymbolType;
+import java.util.List;
+import java.util.ArrayList;
 
 class Parser;
 
 
-// Terminals
+// terminales
 terminal ASSIG;
 terminal PLUS;
 terminal SUB;
 terminal MULT;
 terminal DIV;
+terminal MOD;
+terminal DIV_INT;
 terminal OPEN_BRACKET;
 terminal CLOSE_BRACKET;
+terminal OPEN_BRACE;
+terminal CLOSE_BRACE;
+terminal OPEN_SQUARE_BRACKET;
+terminal CLOSE_SQUARE_BRACKET;
+terminal COLON;
+terminal COMMA;
+terminal EQ;
+terminal LT;
+terminal GT;
+terminal LE;
+terminal GE;
+terminal NE;
 terminal INTEGER_CONSTANT;
+terminal FLOAT_CONSTANT;
+terminal STRING_CONSTANT;
 terminal IDENTIFIER;
+terminal INIT;
+terminal FLOAT_TYPE;
+terminal INT_TYPE;
+terminal STRING_TYPE;
+terminal IF;
+terminal ELSE;
+terminal WHILE;
+terminal READ;
+terminal WRITE;
+terminal AND;
+terminal OR;
+terminal NOT;
+terminal IN;
+terminal DO;
+terminal ENDWHILE;
 
-// Non Terminals
-non terminal sentence;
-non terminal assignment;
+// no terminales
+non terminal program;
+non terminal init_block;
+non terminal decl_list;
+non terminal decl;
+non terminal List id_list;
+non terminal SymbolType type;
+non terminal sent_list;
+non terminal sent;
+non terminal assignment_sent;
+non terminal if_sent;
+non terminal while_sent;
+non terminal special_while_sent;
+non terminal read_sent;
+non terminal write_sent;
+non terminal expr_list;
 non terminal expression;
 non terminal term;
 non terminal factor;
+non terminal condition;
+non terminal cond_and;
+non terminal cond_not;
+non terminal cond_atom;
+non terminal simple_condition;
+non terminal comp_op;
 
-// Start Symbol Definition
-start with sentence;
+start with program;
 
-sentence ::= assignment {: System.out.println("End"); :};
-assignment ::= IDENTIFIER ASSIG expression {: System.out.println("Assignment"); :};
-expression ::= expression PLUS term {: System.out.println("+"); :};
-expression ::= expression SUB term {: System.out.println("-"); :};
-expression ::= term {: System.out.println("Expression = Term"); :};
-term ::= term MULT factor {: System.out.println("*"); :};
-term ::= term DIV factor {: System.out.println("/"); :};
-term ::= factor {: System.out.println("Term = factor"); :};
-factor ::= IDENTIFIER:id  {: System.out.println("Id: " + id); :};
-factor ::= INTEGER_CONSTANT:constant {: System.out.println("Constant: " + constant ); :};
-factor ::= OPEN_BRACKET expression CLOSE_BRACKET {: System.out.println("Factor = (Expression)"); :};
+program ::= init_block sent_list {: System.out.println("Program OK"); :};
+program ::= init_block {: System.out.println("Program OK"); :};
+program ::= sent_list  {: System.out.println("Program OK"); :};
+program ::=            {: System.out.println("Program OK"); :};
+
+init_block ::= INIT OPEN_BRACE decl_list CLOSE_BRACE {: System.out.println("Init block"); :};
+
+decl_list ::= decl_list decl;
+decl_list ::= decl;
+
+// cuando se declara una variable la agrego a la tabla de simbolos
+decl ::= id_list:ids COLON type:t {:
+    for (Object id : ids) {
+        SymbolTable.getInstance().add(new SymbolEntry((String) id, t));
+    }
+    System.out.println("Declaration");
+:};
+
+id_list ::= id_list:lista COMMA IDENTIFIER:id {:
+    lista.add((String) id);
+    RESULT = lista;
+:};
+id_list ::= IDENTIFIER:id {:
+    List<String> nueva = new ArrayList<>();
+    nueva.add((String) id);
+    RESULT = nueva;
+:};
+
+type ::= FLOAT_TYPE  {: RESULT = SymbolType.FLOAT; :};
+type ::= INT_TYPE    {: RESULT = SymbolType.INT;   :};
+type ::= STRING_TYPE {: RESULT = SymbolType.STRING; :};
+
+sent_list ::= sent_list sent;
+sent_list ::= sent;
+
+sent ::= assignment_sent;
+sent ::= if_sent;
+sent ::= while_sent;
+sent ::= special_while_sent;
+sent ::= read_sent;
+sent ::= write_sent;
+
+assignment_sent ::= IDENTIFIER:id ASSIG expression {: System.out.println("Assignment: " + id); :};
+
+// if con y sin else
+if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE
+            {: System.out.println("If"); :};
+if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE ELSE OPEN_BRACE sent_list CLOSE_BRACE
+            {: System.out.println("If-Else"); :};
+
+while_sent ::= WHILE OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE
+               {: System.out.println("While"); :};
+
+// tema especial: ciclo especial con lista de valores
+special_while_sent ::= WHILE IDENTIFIER IN OPEN_SQUARE_BRACKET expr_list CLOSE_SQUARE_BRACKET DO sent_list ENDWHILE
+                       {: System.out.println("Special While"); :};
+
+expr_list ::= expr_list COMMA expression;
+expr_list ::= expression;
+
+read_sent  ::= READ  OPEN_BRACKET IDENTIFIER  CLOSE_BRACKET {: System.out.println("Read");  :};
+write_sent ::= WRITE OPEN_BRACKET expression  CLOSE_BRACKET {: System.out.println("Write"); :};
+
+// condition
+condition ::= condition OR cond_and;
+condition ::= cond_and;
+
+cond_and ::= cond_and AND cond_not;
+cond_and ::= cond_not;
+
+cond_not ::= NOT cond_not;
+cond_not ::= cond_atom;
+
+cond_atom ::= simple_condition;
+cond_atom ::= OPEN_BRACKET condition CLOSE_BRACKET;
+
+simple_condition ::= expression comp_op expression {: System.out.println("Condition"); :};
+
+comp_op ::= EQ; // ==
+comp_op ::= LT; // <
+comp_op ::= GT; // >
+comp_op ::= LE; // <=
+comp_op ::= GE; // >=
+comp_op ::= NE; // !=
+
+expression ::= expression PLUS term  {: System.out.println("+"); :};
+expression ::= expression SUB  term  {: System.out.println("-"); :};
+expression ::= term;
+
+// tema especial: MOD y DIV
+term ::= term MULT    factor {: System.out.println("*");   :};
+term ::= term DIV     factor {: System.out.println("/");   :};
+term ::= term MOD     factor {: System.out.println("MOD"); :};
+term ::= term DIV_INT factor {: System.out.println("DIV"); :};
+term ::= factor;
+
+factor ::= IDENTIFIER:id {: System.out.println("Id: " + id); :};
+factor ::= INTEGER_CONSTANT:c {:
+    String val = (String) c;
+    if (!SymbolTable.getInstance().contains(val)) {
+        SymbolEntry e = new SymbolEntry(val, SymbolType.INT);
+        e.setValue(val);
+        SymbolTable.getInstance().add(e);
+    }
+    System.out.println("Int: " + val);
+:};
+factor ::= FLOAT_CONSTANT:c {:
+    String val = (String) c;
+    if (!SymbolTable.getInstance().contains(val)) {
+        SymbolEntry e = new SymbolEntry(val, SymbolType.FLOAT);
+        e.setValue(val);
+        SymbolTable.getInstance().add(e);
+    }
+    System.out.println("Float: " + val);
+:};
+factor ::= STRING_CONSTANT:c {:
+    String val = (String) c;
+    if (!SymbolTable.getInstance().contains(val)) {
+        SymbolEntry e = new SymbolEntry(val, SymbolType.STRING);
+        e.setValue(val);
+        SymbolTable.getInstance().add(e);
+    }
+    System.out.println("String: " + val);
+:};
+factor ::= OPEN_BRACKET expression CLOSE_BRACKET;
+factor ::= SUB factor;

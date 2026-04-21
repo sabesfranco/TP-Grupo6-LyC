@@ -18,6 +18,8 @@ import static lyc.compiler.constants.Constants.*;
   return symbol(ParserSym.EOF);
 %eofval}
 
+%state COMMENT
+%state COMMENT_C
 
 %{
   private Symbol symbol(int type) {
@@ -47,16 +49,100 @@ WhiteSpace = {LineTerminator} | {Identation}
 Identifier = {Letter} ({Letter}|{Digit})*
 IntegerConstant = {Digit}+
 
+Init = "init"
+FloatType = "Float"
+IntType = "Int"
+StringType = "String"
+If = "if"
+Else = "else"
+While = "while" | "WHILE"
+Read = "read"
+Write = "write"
+And = "AND"
+Or = "OR"
+Not = "NOT"
+In = "IN"
+Do = "DO"
+EndWhile = "ENDWHILE"
+Mod = "MOD"
+DivInt = "DIV"
+OpenSquareBracket = "["
+CloseSquareBracket = "]"
+
+AssignOp        = ":=" | "="
+OpenBrace       = "{"
+CloseBrace      = "}"
+Colon           = ":"
+Comma           = ","
+Eq              = "=="
+Le              = "<="
+Ge              = ">="
+Lt              = "<"
+Gt              = ">"
+Ne              = "!="
+FloatConstant           = {Digit}+ "." {Digit}* | "." {Digit}+
+StringConstant  = \"[^\"\r\n]*\" | \u201C[^\u201D\r\n]*\u201D
+
 %%
 
 
-/* keywords */
-
 <YYINITIAL> {
+  /* comments */
+  "#+"                                      { yybegin(COMMENT); }
+  "/*"                                      { yybegin(COMMENT_C); }
+
+  /* keywords */
+  {Init}                                    { return symbol(ParserSym.INIT); }
+  {FloatType}                               { return symbol(ParserSym.FLOAT_TYPE); }
+  {IntType}                                 { return symbol(ParserSym.INT_TYPE); }
+  {StringType}                              { return symbol(ParserSym.STRING_TYPE); }
+  {If}                                      { return symbol(ParserSym.IF); }
+  {Else}                                    { return symbol(ParserSym.ELSE); }
+  {While}                                   { return symbol(ParserSym.WHILE); }
+  {Read}                                    { return symbol(ParserSym.READ); }
+  {Write}                                   { return symbol(ParserSym.WRITE); }
+  {And}                                     { return symbol(ParserSym.AND); }
+  {Or}                                      { return symbol(ParserSym.OR); }
+  {Not}                                     { return symbol(ParserSym.NOT); }
+  {In}                                      { return symbol(ParserSym.IN); }
+  {Do}                                      { return symbol(ParserSym.DO); }
+  {EndWhile}                                { return symbol(ParserSym.ENDWHILE); }
+  {Mod}                                     { return symbol(ParserSym.MOD); }
+  {DivInt}                                  { return symbol(ParserSym.DIV_INT); }
+
   /* identifiers */
-  {Identifier}                             { return symbol(ParserSym.IDENTIFIER, yytext()); }
-  /* Constants */
-  {IntegerConstant}                        { return symbol(ParserSym.INTEGER_CONSTANT, yytext()); }
+  {Identifier}                              {
+    if (yytext().length() > MAX_LENGTH) throw new InvalidLengthException(yytext());
+    return symbol(ParserSym.IDENTIFIER, yytext());
+  }
+
+  /* constants - float antes que integer, negativo antes que SUB */
+  {FloatConstant}                           { return symbol(ParserSym.FLOAT_CONSTANT, yytext()); }
+  {IntegerConstant}                         {
+    try {
+      long val = Long.parseLong(yytext());
+      if (val > Short.MAX_VALUE) throw new InvalidIntegerException(yytext());
+    } catch (NumberFormatException e) {
+      throw new InvalidIntegerException(yytext());
+    }
+    return symbol(ParserSym.INTEGER_CONSTANT, yytext());
+  }
+  {StringConstant}                          {
+    String val = yytext();
+    if (val.length() - 2 > 50) throw new InvalidLengthException(val);
+    return symbol(ParserSym.STRING_CONSTANT, val);
+  }
+
+  /* assignment operator := antes que = */
+  {AssignOp}                                { return symbol(ParserSym.ASSIG); }
+
+  /* comparators - dobles antes que simples */
+  {Eq}                                      { return symbol(ParserSym.EQ); }
+  {Le}                                      { return symbol(ParserSym.LE); }
+  {Ge}                                      { return symbol(ParserSym.GE); }
+  {Ne}                                      { return symbol(ParserSym.NE); }
+  {Lt}                                      { return symbol(ParserSym.LT); }
+  {Gt}                                      { return symbol(ParserSym.GT); }
 
   /* operators */
   {Plus}                                    { return symbol(ParserSym.PLUS); }
@@ -66,9 +152,29 @@ IntegerConstant = {Digit}+
   {Assig}                                   { return symbol(ParserSym.ASSIG); }
   {OpenBracket}                             { return symbol(ParserSym.OPEN_BRACKET); }
   {CloseBracket}                            { return symbol(ParserSym.CLOSE_BRACKET); }
+  {OpenSquareBracket}                       { return symbol(ParserSym.OPEN_SQUARE_BRACKET); }
+  {CloseSquareBracket}                      { return symbol(ParserSym.CLOSE_SQUARE_BRACKET); }
+  {OpenBrace}                               { return symbol(ParserSym.OPEN_BRACE); }
+  {CloseBrace}                              { return symbol(ParserSym.CLOSE_BRACE); }
+  {Colon}                                   { return symbol(ParserSym.COLON); }
+  {Comma}                                   { return symbol(ParserSym.COMMA); }
 
   /* whitespace */
-  {WhiteSpace}                   { /* ignore */ }
+  {WhiteSpace}                              { /* ignore */ }
+}
+
+<COMMENT> {
+  "+#"                                      { yybegin(YYINITIAL); }
+  [^+\r\n]+                                 { /* ignore */ }
+  "+"                                       { /* ignore */ }
+  {LineTerminator}                          { /* ignore */ }
+}
+
+<COMMENT_C> {
+  "*/"                                      { yybegin(YYINITIAL); }
+  [^*\r\n]+                                 { /* ignore */ }
+  "*"                                       { /* ignore */ }
+  {LineTerminator}                          { /* ignore */ }
 }
 
 
