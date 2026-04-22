@@ -43,6 +43,7 @@ terminal STRING_TYPE;
 terminal IF;
 terminal ELSE;
 terminal WHILE;
+terminal WHILE_SPECIAL;
 terminal READ;
 terminal WRITE;
 terminal AND;

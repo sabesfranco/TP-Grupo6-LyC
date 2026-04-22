@@ -15,10 +15,10 @@ b := "asldk  fh sjf"
 
 
 
-x =: 27 - c
-x =: r + 500
-x =: 34 * 3
-x =: z / f
+x := 27 - c
+x := r + 500
+x := 34 * 3
+x := z / f
 
 
 if (a > b)
@@ -82,7 +82,7 @@ if (NOT a > b)
 
 
 
-write(“ewr”)  #+ “ewr” es una cte string +#
+write("ewr")  #+ "ewr" es una cte string +#
 write(var1)  #+ var1 es una variable numérica definida previamente +#
 
 

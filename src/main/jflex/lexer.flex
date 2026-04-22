@@ -39,7 +39,6 @@ Plus = "+"
 Mult = "*"
 Sub = "-"
 Div = "/"
-Assig = "="
 OpenBracket = "("
 CloseBracket = ")"
 Letter = [a-zA-Z]
@@ -55,7 +54,8 @@ IntType = "Int"
 StringType = "String"
 If = "if"
 Else = "else"
-While = "while" | "WHILE"
+While = "while"
+WhileSpecial = "WHILE"
 Read = "read"
 Write = "write"
 And = "AND"
@@ -69,7 +69,7 @@ DivInt = "DIV"
 OpenSquareBracket = "["
 CloseSquareBracket = "]"
 
-AssignOp        = ":=" | "=" | "=:"
+Assig        = ":="
 OpenBrace       = "{"
 CloseBrace      = "}"
 Colon           = ":"
@@ -99,6 +99,7 @@ StringConstant  = \"[^\"\r\n]*\" | \u201C[^\u201D\r\n]*\u201D
   {If}                                      { return symbol(ParserSym.IF); }
   {Else}                                    { return symbol(ParserSym.ELSE); }
   {While}                                   { return symbol(ParserSym.WHILE); }
+  {WhileSpecial}                            { return symbol(ParserSym.WHILE_SPECIAL); }
   {Read}                                    { return symbol(ParserSym.READ); }
   {Write}                                   { return symbol(ParserSym.WRITE); }
   {And}                                     { return symbol(ParserSym.AND); }
@@ -132,9 +133,6 @@ StringConstant  = \"[^\"\r\n]*\" | \u201C[^\u201D\r\n]*\u201D
     if (val.length() - 2 > 50) throw new InvalidLengthException(val);
     return symbol(ParserSym.STRING_CONSTANT, val);
   }
-
-  /* assignment operator := antes que = */
-  {AssignOp}                                { return symbol(ParserSym.ASSIG); }
 
   /* comparators - dobles antes que simples */
   {Eq}                                      { return symbol(ParserSym.EQ); }
