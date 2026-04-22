@@ -1,1 +1,89 @@
-c=d*(e-21)/4
+init {
+    a1, b1 : Float
+    variable1 : Int
+    p1, p2, p3 : String
+}
+
+
+
+a := 99999.99
+a := 99.
+a := .9999
+
+b := "@sdADaSjfla%dfg"
+b := "asldk  fh sjf"
+
+
+
+x =: 27 - c
+x =: r + 500
+x =: 34 * 3
+x =: z / f
+
+
+if (a > b)
+{
+    write("a es mas grande que b")
+}
+else
+{
+    write("a es mas chico o igual a b")
+}
+
+
+
+
+
+a := 1
+b := 3
+
+while (a > b)
+{
+    write("a es mas grande que b")
+    a := a + 1
+}
+
+
+
+a := 1
+b := 1
+c := 2
+
+if (a > b AND c > b)
+{
+    write("a es mas grande que b y c es mas grande que b")
+}
+
+
+
+a := 1
+b := 1
+c := 2
+
+if (a > b OR c > b)
+{
+    write("a es mas grande que b o c es mas grande que b")
+}
+
+
+
+a := 1
+b := 1
+c := 2
+
+if (NOT a > b)
+{
+    write("a no es mas grande que b")
+}
+
+
+
+#+ Esto es un comentario +#
+
+
+
+write(“ewr”)  #+ “ewr” es una cte string +#
+write(var1)  #+ var1 es una variable numérica definida previamente +#
+
+
+read(base) #+ base es una variable +#

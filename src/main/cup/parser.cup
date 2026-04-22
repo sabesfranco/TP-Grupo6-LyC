@@ -80,36 +80,42 @@ non terminal comp_op;
 
 start with program;
 
-program ::= init_block sent_list {: System.out.println("Program OK"); :};
-program ::= init_block {: System.out.println("Program OK"); :};
-program ::= sent_list  {: System.out.println("Program OK"); :};
-program ::=            {: System.out.println("Program OK"); :};
+program ::= init_block sent_list {: System.out.println("Program completed"); :};
+program ::= init_block {: System.out.println("Program with init only"); :};
+program ::= sent_list {: System.out.println("Program completed"); :};
+program ::= {: System.out.println("Empty program"); :};
 
-init_block ::= INIT OPEN_BRACE decl_list CLOSE_BRACE {: System.out.println("Init block"); :};
+init_block ::= INIT OPEN_BRACE decl_list CLOSE_BRACE {: System.out.println("Init block completed"); :};
 
-decl_list ::= decl_list decl;
-decl_list ::= decl;
+decl_list ::= decl_list decl {: System.out.println("Multiple declarations"); :};
+decl_list ::= decl {: System.out.println("First declaration"); :};
 
 // cuando se declara una variable la agrego a la tabla de simbolos
 decl ::= id_list:ids COLON type:t {:
+    String typeName = t == SymbolType.FLOAT ? "Float" : (t == SymbolType.INT ? "Int" : "String");
     for (Object id : ids) {
-        SymbolTable.getInstance().add(new SymbolEntry((String) id, t));
+        String variableName = (String) id;
+        SymbolTable.getInstance().add(new SymbolEntry(variableName, t));
+        System.out.println("Variable added to table: " + variableName + " (-)");
     }
-    System.out.println("Declaration");
+    System.out.println("Type: " + typeName);
+    System.out.println("Variable declaration with type: " + typeName);
 :};
 
 id_list ::= id_list:lista COMMA IDENTIFIER:id {:
+    System.out.println("," + id);
     lista.add((String) id);
     RESULT = lista;
 :};
 id_list ::= IDENTIFIER:id {:
+    System.out.println("Variable: " + id);
     List<String> nueva = new ArrayList<>();
     nueva.add((String) id);
     RESULT = nueva;
 :};
 
-type ::= FLOAT_TYPE  {: RESULT = SymbolType.FLOAT; :};
-type ::= INT_TYPE    {: RESULT = SymbolType.INT;   :};
+type ::= FLOAT_TYPE {: RESULT = SymbolType.FLOAT; :};
+type ::= INT_TYPE {: RESULT = SymbolType.INT; :};
 type ::= STRING_TYPE {: RESULT = SymbolType.STRING; :};
 
 sent_list ::= sent_list sent;
@@ -122,87 +128,85 @@ sent ::= special_while_sent;
 sent ::= read_sent;
 sent ::= write_sent;
 
-assignment_sent ::= IDENTIFIER:id ASSIG expression {: System.out.println("Assignment: " + id); :};
+assignment_sent ::= IDENTIFIER:id ASSIG expression {: System.out.println("Assignment: " + id + " = (expr)"); :};
 
 // if con y sin else
-if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE
-            {: System.out.println("If"); :};
-if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE ELSE OPEN_BRACE sent_list CLOSE_BRACE
-            {: System.out.println("If-Else"); :};
+if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE {: System.out.println("If"); :};
+if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE ELSE OPEN_BRACE sent_list CLOSE_BRACE {: System.out.println("If-else"); :};
 
-while_sent ::= WHILE OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE
-               {: System.out.println("While"); :};
-
+//while sentence
+while_sent ::= WHILE {: System.out.println("While"); :}
+               OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE;
+               
 // tema especial: ciclo especial con lista de valores
-special_while_sent ::= WHILE IDENTIFIER IN OPEN_SQUARE_BRACKET expr_list CLOSE_SQUARE_BRACKET DO sent_list ENDWHILE
-                       {: System.out.println("Special While"); :};
+special_while_sent ::= WHILE IDENTIFIER IN OPEN_SQUARE_BRACKET expr_list CLOSE_SQUARE_BRACKET DO sent_list ENDWHILE;
 
 expr_list ::= expr_list COMMA expression;
 expr_list ::= expression;
 
-read_sent  ::= READ  OPEN_BRACKET IDENTIFIER  CLOSE_BRACKET {: System.out.println("Read");  :};
-write_sent ::= WRITE OPEN_BRACKET expression  CLOSE_BRACKET {: System.out.println("Write"); :};
+read_sent  ::= READ OPEN_BRACKET IDENTIFIER:id CLOSE_BRACKET {: System.out.println("Read: " + id); :};
+write_sent ::= WRITE OPEN_BRACKET expression CLOSE_BRACKET {: System.out.println("Write"); :};
 
 // condition
-condition ::= condition OR cond_and;
+condition ::= condition OR cond_and {: System.out.println("Operator: OR"); :};
 condition ::= cond_and;
 
-cond_and ::= cond_and AND cond_not;
+cond_and ::= cond_and AND cond_not {: System.out.println("Operator: AND"); :};
 cond_and ::= cond_not;
 
-cond_not ::= NOT cond_not;
+cond_not ::= NOT cond_not {: System.out.println("Operator: NOT"); :};
 cond_not ::= cond_atom;
 
 cond_atom ::= simple_condition;
 cond_atom ::= OPEN_BRACKET condition CLOSE_BRACKET;
 
-simple_condition ::= expression comp_op expression {: System.out.println("Condition"); :};
+simple_condition ::= expression comp_op expression;
 
-comp_op ::= EQ; // ==
-comp_op ::= LT; // <
-comp_op ::= GT; // >
-comp_op ::= LE; // <=
-comp_op ::= GE; // >=
-comp_op ::= NE; // !=
+comp_op ::= EQ {: System.out.println("Operator: =="); :}; // ==
+comp_op ::= LT {: System.out.println("Operator: <"); :};  // <
+comp_op ::= GT {: System.out.println("Operator: >"); :};  // >
+comp_op ::= LE {: System.out.println("Operator: <="); :}; // <=
+comp_op ::= GE {: System.out.println("Operator: >="); :}; // >=
+comp_op ::= NE {: System.out.println("Operator: !="); :}; // !=
 
-expression ::= expression PLUS term  {: System.out.println("+"); :};
-expression ::= expression SUB  term  {: System.out.println("-"); :};
+expression ::= expression PLUS term {: System.out.println("Operator: +"); :};
+expression ::= expression SUB  term {: System.out.println("Operator: -"); :};
 expression ::= term;
 
 // tema especial: MOD y DIV
-term ::= term MULT    factor {: System.out.println("*");   :};
-term ::= term DIV     factor {: System.out.println("/");   :};
-term ::= term MOD     factor {: System.out.println("MOD"); :};
-term ::= term DIV_INT factor {: System.out.println("DIV"); :};
+term ::= term MULT    factor {: System.out.println("Operator: *"); :};
+term ::= term DIV     factor {: System.out.println("Operator: /"); :};
+term ::= term MOD     factor {: System.out.println("Operator: MOD"); :};
+term ::= term DIV_INT factor {: System.out.println("Operator: DIV"); :};
 term ::= factor;
 
 factor ::= IDENTIFIER:id {: System.out.println("Id: " + id); :};
 factor ::= INTEGER_CONSTANT:c {:
     String val = (String) c;
+    System.out.println("Integer: " + val);
     if (!SymbolTable.getInstance().contains(val)) {
         SymbolEntry e = new SymbolEntry(val, SymbolType.INT);
         e.setValue(val);
         SymbolTable.getInstance().add(e);
     }
-    System.out.println("Int: " + val);
 :};
 factor ::= FLOAT_CONSTANT:c {:
     String val = (String) c;
+    System.out.println("Float: " + val);
     if (!SymbolTable.getInstance().contains(val)) {
         SymbolEntry e = new SymbolEntry(val, SymbolType.FLOAT);
         e.setValue(val);
         SymbolTable.getInstance().add(e);
     }
-    System.out.println("Float: " + val);
 :};
 factor ::= STRING_CONSTANT:c {:
     String val = (String) c;
+    System.out.println("String: " + val);
     if (!SymbolTable.getInstance().contains(val)) {
         SymbolEntry e = new SymbolEntry(val, SymbolType.STRING);
         e.setValue(val);
         SymbolTable.getInstance().add(e);
     }
-    System.out.println("String: " + val);
 :};
 factor ::= OPEN_BRACKET expression CLOSE_BRACKET;
 factor ::= SUB factor;
