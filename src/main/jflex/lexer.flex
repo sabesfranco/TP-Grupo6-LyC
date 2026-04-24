@@ -113,24 +113,35 @@ StringConstant  = \"[^\"\r\n]*\" | \u201C[^\u201D\r\n]*\u201D
 
   /* identifiers */
   {Identifier}                              {
-    if (yytext().length() > MAX_LENGTH) throw new InvalidLengthException(yytext());
-    return symbol(ParserSym.IDENTIFIER, yytext());
+    String val = yytext();
+    if (val.length() > MAX_LENGTH) throw new InvalidLengthException("Identificador demasiado largo: " + val);
+    return symbol(ParserSym.IDENTIFIER, val);
   }
 
   /* constants - float antes que integer, negativo antes que SUB */
-  {FloatConstant}                           { return symbol(ParserSym.FLOAT_CONSTANT, yytext()); }
+  {FloatConstant}                           { 
+    try {
+        double value = Double.parseDouble(yytext());
+        if (value > Float.MAX_VALUE) {
+            throw new InvalidIntegerException("Constante flotante fuera de rango: " + yytext());
+        }
+    } catch (NumberFormatException ex) {
+        throw new InvalidIntegerException("Constante flotante invalida: " + yytext());
+    }
+    return symbol(ParserSym.FLOAT_CONSTANT, yytext());
+  }
   {IntegerConstant}                         {
     try {
       long val = Long.parseLong(yytext());
-      if (val > Short.MAX_VALUE) throw new InvalidIntegerException(yytext());
+      if (val > Short.MAX_VALUE) throw new InvalidIntegerException("Constante entera fuera de rango: " + yytext());
     } catch (NumberFormatException e) {
-      throw new InvalidIntegerException(yytext());
+      throw new InvalidIntegerException("Constante entera invalida: " + yytext());
     }
     return symbol(ParserSym.INTEGER_CONSTANT, yytext());
   }
   {StringConstant}                          {
     String val = yytext();
-    if (val.length() - 2 > 50) throw new InvalidLengthException(val);
+    if (val.length() - 2 > 50) throw new InvalidLengthException("String demasiado largo: " + val);
     return symbol(ParserSym.STRING_CONSTANT, val);
   }
 
