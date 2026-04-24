@@ -52,6 +52,7 @@ terminal NOT;
 terminal IN;
 terminal DO;
 terminal ENDWHILE;
+terminal UMINUS; // terminal ficticio para precedencia unaria
 
 // no terminales
 non terminal program;
@@ -71,6 +72,7 @@ non terminal write_sent;
 non terminal expr_list;
 non terminal expression;
 non terminal term;
+non terminal factor_u;
 non terminal factor;
 non terminal condition;
 non terminal cond_and;
@@ -78,6 +80,11 @@ non terminal cond_not;
 non terminal cond_atom;
 non terminal simple_condition;
 non terminal comp_op;
+
+// precedencia
+precedence left PLUS, SUB;
+precedence left MULT, DIV;
+precedence right UMINUS;
 
 start with program;
 
@@ -140,7 +147,7 @@ while_sent ::= WHILE {: System.out.println("While"); :}
                OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE;
                
 // tema especial: ciclo especial con lista de valores
-special_while_sent ::= WHILE IDENTIFIER IN OPEN_SQUARE_BRACKET expr_list CLOSE_SQUARE_BRACKET DO sent_list ENDWHILE;
+special_while_sent ::= WHILE_SPECIAL IDENTIFIER IN OPEN_SQUARE_BRACKET expr_list CLOSE_SQUARE_BRACKET DO sent_list ENDWHILE;
 
 expr_list ::= expr_list COMMA expression;
 expr_list ::= expression;
@@ -175,11 +182,15 @@ expression ::= expression SUB  term {: System.out.println("Operator: -"); :};
 expression ::= term;
 
 // tema especial: MOD y DIV
-term ::= term MULT    factor {: System.out.println("Operator: *"); :};
-term ::= term DIV     factor {: System.out.println("Operator: /"); :};
-term ::= term MOD     factor {: System.out.println("Operator: MOD"); :};
-term ::= term DIV_INT factor {: System.out.println("Operator: DIV"); :};
-term ::= factor;
+term ::= term MULT    factor_u {: System.out.println("Operator: *"); :};
+term ::= term DIV     factor_u {: System.out.println("Operator: /"); :};
+term ::= term MOD     factor_u {: System.out.println("Operator: MOD"); :};
+term ::= term DIV_INT factor_u {: System.out.println("Operator: DIV"); :};
+term ::= factor_u;
+
+factor_u ::= SUB factor {: System.out.println("factor_u -> - factor"); :} %prec UMINUS;
+factor_u ::= PLUS factor {: System.out.println("factor_u -> + factor"); :} %prec UMINUS;
+factor_u ::= factor {: System.out.println("factor_u -> factor"); :};
 
 factor ::= IDENTIFIER:id {: System.out.println("Id: " + id); :};
 factor ::= INTEGER_CONSTANT:c {:
@@ -210,4 +221,3 @@ factor ::= STRING_CONSTANT:c {:
     }
 :};
 factor ::= OPEN_BRACKET expression CLOSE_BRACKET;
-factor ::= SUB factor;
