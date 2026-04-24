@@ -112,13 +112,17 @@ decl ::= id_list:ids COLON type:t {:
 
 id_list ::= id_list:lista COMMA IDENTIFIER:id {:
     System.out.println("," + id);
-    lista.add((String) id);
+    String name = (String) id;
+    SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
+    lista.add(name);
     RESULT = lista;
 :};
 id_list ::= IDENTIFIER:id {:
     System.out.println("Variable: " + id);
+    String name = (String) id;
+    SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
     List<String> nueva = new ArrayList<>();
-    nueva.add((String) id);
+    nueva.add(name);
     RESULT = nueva;
 :};
 
@@ -136,7 +140,13 @@ sent ::= special_while_sent;
 sent ::= read_sent;
 sent ::= write_sent;
 
-assignment_sent ::= IDENTIFIER:id ASSIG expression {: System.out.println("Assignment: " + id + " = (expr)"); :};
+assignment_sent ::= IDENTIFIER:id ASSIG expression {:
+    String name = (String) id;
+    if (!SymbolTable.getInstance().contains(name)) {
+        SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
+    }
+    System.out.println("Assignment: " + id + " = (expr)");
+:};
 
 // if con y sin else
 if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE {: System.out.println("If"); :};
@@ -147,12 +157,23 @@ while_sent ::= WHILE {: System.out.println("While"); :}
                OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE;
                
 // tema especial: ciclo especial con lista de valores
-special_while_sent ::= WHILE_SPECIAL IDENTIFIER IN OPEN_SQUARE_BRACKET expr_list CLOSE_SQUARE_BRACKET DO sent_list ENDWHILE;
+special_while_sent ::= WHILE_SPECIAL IDENTIFIER:id IN OPEN_SQUARE_BRACKET expr_list CLOSE_SQUARE_BRACKET DO sent_list ENDWHILE {:
+    String name = (String) id;
+    if (!SymbolTable.getInstance().contains(name)) {
+        SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
+    }
+:};
 
 expr_list ::= expr_list COMMA expression;
 expr_list ::= expression;
 
-read_sent  ::= READ OPEN_BRACKET IDENTIFIER:id CLOSE_BRACKET {: System.out.println("Read: " + id); :};
+read_sent  ::= READ OPEN_BRACKET IDENTIFIER:id CLOSE_BRACKET {:
+    String name = (String) id;
+    if (!SymbolTable.getInstance().contains(name)) {
+        SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
+    }
+    System.out.println("Read: " + id);
+:};
 write_sent ::= WRITE OPEN_BRACKET expression CLOSE_BRACKET {: System.out.println("Write"); :};
 
 // condition
@@ -192,7 +213,13 @@ factor_u ::= SUB factor {: System.out.println("factor_u -> - factor"); :} %prec 
 factor_u ::= PLUS factor {: System.out.println("factor_u -> + factor"); :} %prec UMINUS;
 factor_u ::= factor {: System.out.println("factor_u -> factor"); :};
 
-factor ::= IDENTIFIER:id {: System.out.println("Id: " + id); :};
+factor ::= IDENTIFIER:id {:
+    String name = (String) id;
+    if (!SymbolTable.getInstance().contains(name)) {
+        SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
+    }
+    System.out.println("Id: " + id);
+:};
 factor ::= INTEGER_CONSTANT:c {:
     String val = (String) c;
     System.out.println("Integer: " + val);

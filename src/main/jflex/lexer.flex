@@ -69,7 +69,7 @@ DivInt = "DIV"
 OpenSquareBracket = "["
 CloseSquareBracket = "]"
 
-Assig        = ":="
+Assig        = ":=" | "=" | "=:"
 OpenBrace       = "{"
 CloseBrace      = "}"
 Colon           = ":"

@@ -25,7 +25,7 @@ public class SymbolEntry {
 
     @Override
     public String toString() {
-        return String.format("%-20s %-10s %-20s %d",
+        return String.format("%-50s | %-20s | %-50s | %d-10",
                 name, type, value != null ? value : "-", length);
     }
 }

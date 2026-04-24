@@ -10,9 +10,9 @@ public class SymbolTableGenerator implements FileGenerator {
 
     @Override
     public void generate(FileWriter fileWriter) throws IOException {
-        fileWriter.write(String.format("%-20s %-10s %-20s %s%n",
-                "NAME", "TYPE", "VALUE", "LENGTH"));
-        fileWriter.write("-".repeat(65) + System.lineSeparator());
+        String headerFmt = "%-50s | %-20s | %-50s | %-10s%n";
+        fileWriter.write(String.format(headerFmt, "NAME", "TYPE", "VALUE", "LENGTH"));
+        fileWriter.write("-".repeat(140) + System.lineSeparator());
         for (SymbolEntry entry : SymbolTable.getInstance().getAll()) {
             fileWriter.write(entry.toString() + System.lineSeparator());
         }
