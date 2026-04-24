@@ -94,6 +94,74 @@ public class LexerTest {
     });
   }
 
+  // agregado
+  //@Disabled OK
+  @Test
+  public void floatAssignment() throws Exception {
+    scan("c := 4.123");
+    assertThat(nextToken()).isEqualTo(ParserSym.IDENTIFIER);
+    assertThat(nextToken()).isEqualTo(ParserSym.ASSIG);
+    assertThat(nextToken()).isEqualTo(ParserSym.FLOAT_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.EOF);
+  }  
+  
+  // agregado
+  //@Disabled OK
+  @Test
+  public void floatOperation() throws Exception {
+    scan("4.123 + 1.");
+    assertThat(nextToken()).isEqualTo(ParserSym.FLOAT_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.PLUS);
+    assertThat(nextToken()).isEqualTo(ParserSym.FLOAT_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.EOF);
+  }
+
+  // agregado
+  //@Disabled OK
+  @Test
+  public void modOperation() throws Exception {
+    scan("a MOD 3");
+    assertThat(nextToken()).isEqualTo(ParserSym.IDENTIFIER);
+    assertThat(nextToken()).isEqualTo(ParserSym.MOD);
+    assertThat(nextToken()).isEqualTo(ParserSym.INTEGER_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.EOF);
+  }
+  
+  // agregado
+  //@Disabled OK
+  @Test
+  public void divOperation() throws Exception {
+    scan("a DIV 3");
+    assertThat(nextToken()).isEqualTo(ParserSym.IDENTIFIER);
+    assertThat(nextToken()).isEqualTo(ParserSym.DIV_INT);
+    assertThat(nextToken()).isEqualTo(ParserSym.INTEGER_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.EOF);
+  }
+
+  // agregado
+  //@Disabled OK
+  @Test
+  public void whileSpecial() throws Exception {
+    scan("WHILE x IN [1,2,3] DO write(x) ENDWHILE");
+    assertThat(nextToken()).isEqualTo(ParserSym.WHILE_SPECIAL);
+    assertThat(nextToken()).isEqualTo(ParserSym.IDENTIFIER);
+    assertThat(nextToken()).isEqualTo(ParserSym.IN);
+    assertThat(nextToken()).isEqualTo(ParserSym.OPEN_SQUARE_BRACKET);
+    assertThat(nextToken()).isEqualTo(ParserSym.INTEGER_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.COMMA);
+    assertThat(nextToken()).isEqualTo(ParserSym.INTEGER_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.COMMA);
+    assertThat(nextToken()).isEqualTo(ParserSym.INTEGER_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.CLOSE_SQUARE_BRACKET);
+    assertThat(nextToken()).isEqualTo(ParserSym.DO);
+    assertThat(nextToken()).isEqualTo(ParserSym.WRITE);
+    assertThat(nextToken()).isEqualTo(ParserSym.OPEN_BRACKET);
+    assertThat(nextToken()).isEqualTo(ParserSym.IDENTIFIER);
+    assertThat(nextToken()).isEqualTo(ParserSym.CLOSE_BRACKET);
+    assertThat(nextToken()).isEqualTo(ParserSym.ENDWHILE);
+    assertThat(nextToken()).isEqualTo(ParserSym.EOF);
+  }
+
   @AfterEach
   public void resetLexer() {
     lexer = null;
