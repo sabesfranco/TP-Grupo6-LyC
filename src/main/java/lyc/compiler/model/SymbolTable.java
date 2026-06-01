@@ -23,10 +23,6 @@ public class SymbolTable {
         return entries.containsKey(name);
     }
 
-    public SymbolEntry get(String name) {
-        return entries.get(name);
-    }
-
     public Collection<SymbolEntry> getAll() {
         return entries.values();
     }

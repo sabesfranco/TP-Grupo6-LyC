@@ -1,16 +1,18 @@
 package lyc.compiler;
 
+%{
 import java_cup.runtime.*;
 import lyc.compiler.model.SymbolTable;
 import lyc.compiler.model.SymbolEntry;
 import lyc.compiler.model.SymbolType;
+import lyc.compiler.utils.IntermediateCode;
+import lyc.compiler.utils.SemanticChecker;
 import java.util.List;
 import java.util.ArrayList;
+%}
 
 class Parser;
 
-
-// terminales
 terminal ASSIG;
 terminal PLUS;
 terminal SUB;
@@ -52,9 +54,8 @@ terminal NOT;
 terminal IN;
 terminal DO;
 terminal ENDWHILE;
-terminal UMINUS; // terminal ficticio para precedencia unaria
+terminal UMINUS;
 
-// no terminales
 non terminal program;
 non terminal init_block;
 non terminal decl_list;
@@ -65,25 +66,25 @@ non terminal sent_list;
 non terminal sent;
 non terminal assignment_sent;
 non terminal if_sent;
+non terminal if_body;
 non terminal while_sent;
 non terminal special_while_sent;
 non terminal read_sent;
 non terminal write_sent;
-non terminal expr_list;
-non terminal expression;
-non terminal term;
-non terminal factor_u;
-non terminal factor;
-non terminal condition;
-non terminal cond_and;
-non terminal cond_not;
-non terminal cond_atom;
-non terminal simple_condition;
-non terminal comp_op;
+non terminal List expr_list;
+non terminal String expression;
+non terminal String term;
+non terminal String factor_u;
+non terminal String factor;
+non terminal String condition;
+non terminal String cond_and;
+non terminal String cond_not;
+non terminal String cond_atom;
+non terminal String simple_condition;
+non terminal String comp_op;
 
-// precedencia
 precedence left PLUS, SUB;
-precedence left MULT, DIV;
+precedence left MULT, DIV, MOD, DIV_INT;
 precedence right UMINUS;
 
 start with program;
@@ -98,13 +99,14 @@ init_block ::= INIT OPEN_BRACE decl_list CLOSE_BRACE {: System.out.println("Init
 decl_list ::= decl_list decl {: System.out.println("Multiple declarations"); :};
 decl_list ::= decl {: System.out.println("First declaration"); :};
 
-// cuando se declara una variable la agrego a la tabla de simbolos
 decl ::= id_list:ids COLON type:t {:
     String typeName = t == SymbolType.FLOAT ? "Float" : (t == SymbolType.INT ? "Int" : "String");
-    for (Object id : ids) {
-        String variableName = (String) id;
-        SymbolTable.getInstance().add(new SymbolEntry(variableName, t));
-        System.out.println("Variable added to table: " + variableName + " (-)");
+    List<String> varList = (List<String>) ids;
+    for (String variableName : varList) {
+        SemanticChecker.declare(variableName, typeName);
+        SymbolEntry entry = new SymbolEntry(variableName, t);
+        SymbolTable.getInstance().add(entry);
+        System.out.println("Variable added to table: " + variableName + " (" + typeName + ")");
     }
     System.out.println("Type: " + typeName);
     System.out.println("Variable declaration with type: " + typeName);
@@ -112,115 +114,188 @@ decl ::= id_list:ids COLON type:t {:
 
 id_list ::= id_list:lista COMMA IDENTIFIER:id {:
     System.out.println("," + id);
-    String name = (String) id;
-    SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
-    lista.add(name);
+    lista.add((String) id);
     RESULT = lista;
-:};
-id_list ::= IDENTIFIER:id {:
+:}
+| IDENTIFIER:id {:
     System.out.println("Variable: " + id);
-    String name = (String) id;
-    SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
     List<String> nueva = new ArrayList<>();
-    nueva.add(name);
+    nueva.add((String) id);
     RESULT = nueva;
 :};
 
-type ::= FLOAT_TYPE {: RESULT = SymbolType.FLOAT; :};
-type ::= INT_TYPE {: RESULT = SymbolType.INT; :};
-type ::= STRING_TYPE {: RESULT = SymbolType.STRING; :};
+type ::= FLOAT_TYPE {: RESULT = SymbolType.FLOAT; :}
+       | INT_TYPE {: RESULT = SymbolType.INT; :}
+       | STRING_TYPE {: RESULT = SymbolType.STRING; :}
+       ;
 
 sent_list ::= sent_list sent;
 sent_list ::= sent;
 
-sent ::= assignment_sent;
-sent ::= if_sent;
-sent ::= while_sent;
-sent ::= special_while_sent;
-sent ::= read_sent;
-sent ::= write_sent;
+sent ::= assignment_sent
+       | if_sent
+       | while_sent
+       | special_while_sent
+       | read_sent
+       | write_sent
+       ;
 
-assignment_sent ::= IDENTIFIER:id ASSIG expression {:
+assignment_sent ::= IDENTIFIER:id ASSIG expression:expr {:
     String name = (String) id;
-    if (!SymbolTable.getInstance().contains(name)) {
-        SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
-    }
+    SemanticChecker.checkExists(name);
+    SemanticChecker.checkTypeCompatibility(name, SemanticChecker.inferPostfixType(expr));
+    IntermediateCode.emitAssign(name, expr);
     System.out.println("Assignment: " + id + " = (expr)");
 :};
 
-// if con y sin else
-if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE {: System.out.println("If"); :};
-if_sent ::= IF OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE ELSE OPEN_BRACE sent_list CLOSE_BRACE {: System.out.println("If-else"); :};
+if_sent ::= IF OPEN_BRACKET condition:cond CLOSE_BRACKET
+            {: IntermediateCode.emitBranch(cond); :}
+            if_body
+          ;
 
-//while sentence
-while_sent ::= WHILE {: System.out.println("While"); :}
-               OPEN_BRACKET condition CLOSE_BRACKET OPEN_BRACE sent_list CLOSE_BRACE;
-               
-// tema especial: ciclo especial con lista de valores
-special_while_sent ::= WHILE_SPECIAL IDENTIFIER:id IN OPEN_SQUARE_BRACKET expr_list CLOSE_SQUARE_BRACKET DO sent_list ENDWHILE {:
+if_body ::= OPEN_BRACE sent_list CLOSE_BRACE
+            {: IntermediateCode.closeIfWithoutElse(); System.out.println("If"); :}
+          ;
+if_body ::= OPEN_BRACE sent_list CLOSE_BRACE
+            {: IntermediateCode.closeIfThenForElse(); :}
+            ELSE OPEN_BRACE sent_list CLOSE_BRACE
+            {: IntermediateCode.closeIfElse(); System.out.println("If-else"); :}
+          ;
+
+while_sent ::= WHILE {: IntermediateCode.beginWhile(); System.out.println("While"); :}
+               OPEN_BRACKET condition:cond CLOSE_BRACKET
+               {: IntermediateCode.emitBranch(cond); :}
+               OPEN_BRACE sent_list CLOSE_BRACE
+               {: IntermediateCode.endWhile(); :}
+               ;
+
+special_while_sent ::= WHILE_SPECIAL IDENTIFIER:id IN OPEN_SQUARE_BRACKET expr_list:vals CLOSE_SQUARE_BRACKET
+                       {:
     String name = (String) id;
-    if (!SymbolTable.getInstance().contains(name)) {
-        SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
+    SemanticChecker.checkExists(name);
+    List<String> values = (List<String>) vals;
+    StringBuilder header = new StringBuilder("WHILE_IN " + name);
+    for (String value : values) {
+        header.append(" ").append(value);
     }
+    IntermediateCode.addLine(header.toString());
+    System.out.println("WHILE IN loop for: " + name);
+                       :}
+                       DO sent_list ENDWHILE;
+
+expr_list ::= expr_list:list COMMA expression:expr {:
+    list.add(expr);
+    RESULT = list;
+:};
+expr_list ::= expression:expr {:
+    List<String> list = new ArrayList<>();
+    list.add(expr);
+    RESULT = list;
 :};
 
-expr_list ::= expr_list COMMA expression;
-expr_list ::= expression;
-
-read_sent  ::= READ OPEN_BRACKET IDENTIFIER:id CLOSE_BRACKET {:
+read_sent ::= READ OPEN_BRACKET IDENTIFIER:id CLOSE_BRACKET {:
     String name = (String) id;
-    if (!SymbolTable.getInstance().contains(name)) {
-        SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
-    }
+    SemanticChecker.checkExists(name);
+    IntermediateCode.emitRead(name);
     System.out.println("Read: " + id);
 :};
-write_sent ::= WRITE OPEN_BRACKET expression CLOSE_BRACKET {: System.out.println("Write"); :};
 
-// condition
-condition ::= condition OR cond_and {: System.out.println("Operator: OR"); :};
-condition ::= cond_and;
+write_sent ::= WRITE OPEN_BRACKET expression:expr CLOSE_BRACKET {:
+    IntermediateCode.emitWrite(expr);
+    System.out.println("Write");
+:};
 
-cond_and ::= cond_and AND cond_not {: System.out.println("Operator: AND"); :};
-cond_and ::= cond_not;
+condition ::= condition:left OR cond_and:right {:
+    System.out.println("Operator: OR");
+    RESULT = left + " " + right + " OR";
+:}
+| cond_and:expr {: RESULT = expr; :}
+;
 
-cond_not ::= NOT cond_not {: System.out.println("Operator: NOT"); :};
-cond_not ::= cond_atom;
+cond_and ::= cond_and:left AND cond_not:right {:
+    System.out.println("Operator: AND");
+    RESULT = left + " " + right + " AND";
+:}
+| cond_not:expr {: RESULT = expr; :}
+;
 
-cond_atom ::= simple_condition;
-cond_atom ::= OPEN_BRACKET condition CLOSE_BRACKET;
+cond_not ::= NOT cond_not:operand {:
+    System.out.println("Operator: NOT");
+    RESULT = operand + " NOT";
+:} %prec UMINUS
+| cond_atom:expr {: RESULT = expr; :}
+;
 
-simple_condition ::= expression comp_op expression;
+cond_atom ::= simple_condition:cond {: RESULT = cond; :}
+            | OPEN_BRACKET condition:cond CLOSE_BRACKET {: RESULT = cond; :}
+            ;
 
-comp_op ::= EQ {: System.out.println("Operator: =="); :}; // ==
-comp_op ::= LT {: System.out.println("Operator: <"); :};  // <
-comp_op ::= GT {: System.out.println("Operator: >"); :};  // >
-comp_op ::= LE {: System.out.println("Operator: <="); :}; // <=
-comp_op ::= GE {: System.out.println("Operator: >="); :}; // >=
-comp_op ::= NE {: System.out.println("Operator: !="); :}; // !=
+simple_condition ::= expression:left comp_op:op expression:right {:
+    RESULT = left + " " + right + " " + op;
+:};
 
-expression ::= expression PLUS term {: System.out.println("Operator: +"); :};
-expression ::= expression SUB  term {: System.out.println("Operator: -"); :};
-expression ::= term;
+comp_op ::= EQ {: System.out.println("Operator: =="); RESULT = "=="; :}
+          | LT {: System.out.println("Operator: <"); RESULT = "<"; :}
+          | GT {: System.out.println("Operator: >"); RESULT = ">"; :}
+          | LE {: System.out.println("Operator: <="); RESULT = "<="; :}
+          | GE {: System.out.println("Operator: >="); RESULT = ">="; :}
+          | NE {: System.out.println("Operator: !="); RESULT = "!="; :}
+          ;
 
-// tema especial: MOD y DIV
-term ::= term MULT    factor_u {: System.out.println("Operator: *"); :};
-term ::= term DIV     factor_u {: System.out.println("Operator: /"); :};
-term ::= term MOD     factor_u {: System.out.println("Operator: MOD"); :};
-term ::= term DIV_INT factor_u {: System.out.println("Operator: DIV"); :};
-term ::= factor_u;
+expression ::= expression:expr1 PLUS term:term1 {:
+    System.out.println("Operator: +");
+    RESULT = expr1 + " " + term1 + " +";
+:}
+| expression:expr1 SUB term:term1 {:
+    System.out.println("Operator: -");
+    RESULT = expr1 + " " + term1 + " -";
+:}
+| term:term1 {: RESULT = term1; :}
+;
 
-factor_u ::= SUB factor {: System.out.println("factor_u -> - factor"); :} %prec UMINUS;
-factor_u ::= PLUS factor {: System.out.println("factor_u -> + factor"); :} %prec UMINUS;
-factor_u ::= factor {: System.out.println("factor_u -> factor"); :};
+term ::= term:term1 MULT factor_u:factor1 {:
+    System.out.println("Operator: *");
+    RESULT = term1 + " " + factor1 + " *";
+:}
+| term:term1 DIV factor_u:factor1 {:
+    System.out.println("Operator: /");
+    SemanticChecker.checkDivisionByZero(factor1);
+    RESULT = term1 + " " + factor1 + " /";
+:}
+| term:term1 MOD factor_u:factor1 {:
+    System.out.println("Operator: MOD");
+    SemanticChecker.checkDivisionByZero(factor1);
+    RESULT = term1 + " " + factor1 + " MOD";
+:}
+| term:term1 DIV_INT factor_u:factor1 {:
+    System.out.println("Operator: DIV");
+    SemanticChecker.checkDivisionByZero(factor1);
+    RESULT = term1 + " " + factor1 + " DIV";
+:}
+| factor_u:factor1 {: RESULT = factor1; :}
+;
+
+factor_u ::= SUB factor:factor1 {:
+    System.out.println("factor_u -> - factor");
+    RESULT = "0 " + factor1 + " -";
+:} %prec UMINUS
+| PLUS factor:factor1 {:
+    System.out.println("factor_u -> + factor");
+    RESULT = factor1;
+:} %prec UMINUS
+| factor:factor1 {:
+    System.out.println("factor_u -> factor");
+    RESULT = factor1;
+:}
+;
 
 factor ::= IDENTIFIER:id {:
     String name = (String) id;
-    if (!SymbolTable.getInstance().contains(name)) {
-        SymbolTable.getInstance().add(new SymbolEntry(name, SymbolType.UNKNOWN));
-    }
+    SemanticChecker.checkExists(name);
     System.out.println("Id: " + id);
-:};
-factor ::= INTEGER_CONSTANT:c {:
+    RESULT = name;
+:}
+| INTEGER_CONSTANT:c {:
     String val = (String) c;
     System.out.println("Integer: " + val);
     if (!SymbolTable.getInstance().contains(val)) {
@@ -228,8 +303,9 @@ factor ::= INTEGER_CONSTANT:c {:
         e.setValue(val);
         SymbolTable.getInstance().add(e);
     }
-:};
-factor ::= FLOAT_CONSTANT:c {:
+    RESULT = val;
+:}
+| FLOAT_CONSTANT:c {:
     String val = (String) c;
     System.out.println("Float: " + val);
     if (!SymbolTable.getInstance().contains(val)) {
@@ -237,8 +313,9 @@ factor ::= FLOAT_CONSTANT:c {:
         e.setValue(val);
         SymbolTable.getInstance().add(e);
     }
-:};
-factor ::= STRING_CONSTANT:c {:
+    RESULT = val;
+:}
+| STRING_CONSTANT:c {:
     String val = (String) c;
     System.out.println("String: " + val);
     if (!SymbolTable.getInstance().contains(val)) {
@@ -246,5 +323,7 @@ factor ::= STRING_CONSTANT:c {:
         e.setValue(val);
         SymbolTable.getInstance().add(e);
     }
-:};
-factor ::= OPEN_BRACKET expression CLOSE_BRACKET;
+    RESULT = val;
+:}
+| OPEN_BRACKET expression:expr CLOSE_BRACKET {: RESULT = expr; :}
+;

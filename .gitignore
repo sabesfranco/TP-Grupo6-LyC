@@ -1,6 +1,7 @@
 /target/
-/.mvn/
 /.idea/
 /build.xml
 /cup-java-minijava.iml
-git branch -M main
+.mvn/wrapper/maven-wrapper.jar
+write_ann_tag_1_0_0.py
+_make_tag.py

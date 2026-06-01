@@ -2,6 +2,9 @@ package lyc.compiler;
 
 import java_cup.runtime.Symbol;
 import lyc.compiler.factories.ParserFactory;
+import lyc.compiler.model.SymbolTable;
+import lyc.compiler.utils.IntermediateCode;
+import lyc.compiler.utils.SemanticChecker;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
@@ -86,7 +89,15 @@ public class ParserTest {
     }
 
     private Symbol scan(String input) throws Exception {
-        return ParserFactory.create(input).parse();
+        SymbolTable.getInstance().clear();
+        IntermediateCode.clear();
+        SemanticChecker.clear();
+        SemanticChecker.setActivo(false);
+        try {
+            return ParserFactory.create(input).parse();
+        } finally {
+            SemanticChecker.setActivo(true);
+        }
     }
 
     private String readFromFile(String fileName) throws IOException {

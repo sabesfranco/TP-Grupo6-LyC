@@ -2,6 +2,7 @@ init {
     a1, b1 : Float
     variable1 : Int
     p1, p2, p3 : String
+    a, b, c, x, r, z, f, var1, base : Float
 }
 
 
@@ -10,8 +11,8 @@ a := 99999.99
 a := 99.
 a := .9999
 
-b := "@sdADaSjfla%dfg"
-b := "asldk  fh sjf"
+p1 := "@sdADaSjfla%dfg"
+p2 := "asldk  fh sjf"
 
 
 
