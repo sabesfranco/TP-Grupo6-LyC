@@ -63,8 +63,8 @@ public class IntermediateCode {
 
     public static void closeIfThenForElse() {
         int idx = pilaSaltos.pop();
-        patchLine(idx, lines.size() + 1);
         int bi = addLine("BI ?");
+        patchLine(idx, lines.size() + 1);
         pilaSaltos.push(bi);
     }
 
