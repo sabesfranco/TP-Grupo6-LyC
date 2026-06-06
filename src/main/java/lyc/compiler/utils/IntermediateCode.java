@@ -9,6 +9,7 @@ public class IntermediateCode {
     private static List<String> lines = new ArrayList<>();
     private static Stack<Integer> pilaSaltos = new Stack<>();
     private static Stack<Integer> pilaWhile = new Stack<>();
+    private static Stack<Integer> pilaWhileSpecial = new Stack<>();
 
     private IntermediateCode() {}
 
@@ -16,6 +17,7 @@ public class IntermediateCode {
         lines.clear();
         pilaSaltos.clear();
         pilaWhile.clear();
+        pilaWhileSpecial.clear();
     }
 
     public static List<String> getLines() {
@@ -82,6 +84,19 @@ public class IntermediateCode {
         addLine("BI " + (et + 1));
         int idx = pilaSaltos.pop();
         patchLine(idx, lines.size() + 1);
+        addLine("FIN");
+    }
+    
+    public static void beginWhileSpecial() {
+        pilaWhileSpecial.push(addLine("ET") + 1);
+    }
+
+    public static int peekWhileSpecial() {
+        return pilaWhileSpecial.peek();
+    }
+
+    public static void endWhileSpecial() {
+        int et = pilaWhileSpecial.pop();
         addLine("FIN");
     }
 }

@@ -173,15 +173,25 @@ special_while_sent ::= WHILE_SPECIAL IDENTIFIER:id IN OPEN_SQUARE_BRACKET expr_l
                        {:
     String name = (String) id;
     SemanticChecker.checkExists(name);
-    List<String> values = (List<String>) vals;
-    StringBuilder header = new StringBuilder("WHILE_IN " + name);
-    for (String value : values) {
-        header.append(" ").append(value);
-    }
-    IntermediateCode.addLine(header.toString());
+    IntermediateCode.addLine("" +0 + " @i :=");
+    String firstExpression = (String) vals.get(0);
+    IntermediateCode.addLine("" + firstExpression + " " + id + ":="); 
+    IntermediateCode.beginWhileSpecial(); // ET
     System.out.println("WHILE IN loop for: " + name);
-                       :}
-                       DO sent_list ENDWHILE;
+    :} DO sent_list ENDWHILE {: 
+    int lastLine = IntermediateCode.addLine("" + "@i 1 + @i :=");
+    
+    List<String> values = (List<String>) vals;
+    for (int index = 1; index < values.size(); index++) {
+        //if(@i==1)
+
+        IntermediateCode.addLine("@i " + index + " CMP BNE " + (lastLine + 5)); 
+        String nextExpression = values.get(index);
+        IntermediateCode.addLine("" + nextExpression + " " + id + ":="); 
+        lastLine = IntermediateCode.addLine("BI " + IntermediateCode.peekWhileSpecial()); 
+    }
+    IntermediateCode.endWhileSpecial();
+:};
 
 expr_list ::= expr_list:list COMMA expression:expr {:
     list.add(expr);
