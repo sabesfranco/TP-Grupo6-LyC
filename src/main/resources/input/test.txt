@@ -1,25 +1,25 @@
 init {
-    a1, b1 : Float
-    variable1 : Int
-    p1, p2, p3 : String
-    a, b, c, x, r, z, f, var1, base : Float
+    f1, f2 : Float
+    a, b, c, d, e, w, x, y, z : Int
+    s1, s2, s3 : String
+    variable1 : Float
 }
 
 
 
-a := 99999.99
-a := 99.
-a := .9999
+f1 := 99999.99
+f1 := 99.
+f1 := .9999
 
-p1 := "@sdADaSjfla%dfg"
-p2 := "asldk  fh sjf"
+s1 := "@sdADaSjfla%dfg"
+s2 := "asldk  fh sjf"
 
-
-
-x := 27 - c
-x := r + 500
-x := 34 * 3
-x := z / f
+a := 1
+b := 2
+c := 27 - b
+c := a + 500
+c := 34 * 3
+c := c / 2
 
 
 if (a > b)
@@ -31,24 +31,73 @@ else
     write("a es mas chico o igual a b")
 }
 
+d := 2
+e := 3
+w := 4
+x := 5
+y := 6
+z := 7
+if (a > b)
+{
+    write("V")
+    if(b < c)
+    {
+        write("VV")
+        if(c < d)
+        {
+            write("VVV")
+        }
+        write("VV.")
+    }
+    else
+    {
+        write("VF")
+        if(d < e)
+        {
+            write("VFV")
+        }
+    }
+    write("V.")
+}
+else
+{
+    write("F")
+    if(w < x)
+    {
+        write("FV")
+        if(x < y)
+        {
+            write("FVV")
+        }
+        write("FV.")
+    }
+    else
+    {
+        write("FF")
+        if(y < z)
+        {
+            write("FFV")
+        }
+        write("FF.")
+    }
+    write("F.")
+}
 
 
-
-
-a := 1
+a := 5
 b := 3
 
 while (a > b)
 {
     write("a es mas grande que b")
-    a := a + 1
+    a := a - 1
 }
 
 
 
-a := 1
-b := 1
-c := 2
+a := 4
+b := 2
+c := 1
 
 if (a > b AND c > b)
 {
@@ -70,7 +119,6 @@ if (a > b OR c > b)
 
 a := 1
 b := 1
-c := 2
 
 if (NOT a > b)
 {
@@ -84,10 +132,10 @@ if (NOT a > b)
 
 
 write("ewr")  #+ "ewr" es una cte string +#
-write(var1)  #+ var1 es una variable numérica definida previamente +#
+write(variable1)  #+ var1 es una variable numérica definida previamente +#
 
 
-read(base) #+ base es una variable +#
+read(s1) #+ base es una variable +#
 
 
 WHILE x IN [1,2,3]
@@ -102,4 +150,4 @@ if(x MOD 2 == 0)
 }
 
 
-x := (10 DIV 3) + (10 MOD 3)   #+ 3 + 1 => x = 4 +#
+a := (10 DIV 3) + (10 MOD 3)   #+ 3 + 1 => a = 4 +#
