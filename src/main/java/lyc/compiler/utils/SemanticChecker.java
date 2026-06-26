@@ -35,18 +35,25 @@ public final class SemanticChecker {
         }
     }
 
-    public static void checkTypeCompatibility(String varName, String exprType) {
+    public static void checkAssignmentTypeCompatibility(String varName, String exprType) {
         if (!activo) return;
         if (!variables.containsKey(varName)) {
             return;
         }
-        String varType = variables.get(varName);
-        if (varType == null || exprType == null || "-".equals(exprType)) {
+        String targetType = variables.get(varName);
+        if (targetType == null || exprType == null || "-".equals(exprType)) {
             return;
         }
-        if (!areTypesCompatible(varType, exprType)) {
-            error("Type incompatibility: cannot assign type " + exprType + " to variable of type " + varType);
+        if (targetType.equals(exprType) || "Float".equals(targetType) && "Int".equals(exprType)) {
+            return;
         }
+        error("Type incompatibility: cannot assign type " + exprType + " to variable of type " + targetType);
+    }
+
+    public static void checkConditionTypeCompatibility(String exprType1, String exprType2) {
+        if (!activo) return;
+        if (exprType1.equals(exprType2)) return;
+        error("Type incompatibility in condition: cannot compare " + exprType1 + " with " + exprType2);
     }
 
     public static void checkDivisionByZero(String operandPostfix) {
@@ -114,13 +121,6 @@ public final class SemanticChecker {
         } catch (NumberFormatException e) {
             return "-";
         }
-    }
-
-    private static boolean areTypesCompatible(String targetType, String sourceType) {
-        if (targetType.equals(sourceType)) {
-            return true;
-        }
-        return "Float".equals(targetType) && "Int".equals(sourceType);
     }
 
     private static void error(String message) {

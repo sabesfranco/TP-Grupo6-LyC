@@ -143,7 +143,7 @@ sent ::= assignment_sent
 assignment_sent ::= IDENTIFIER:id ASSIG expression:expr {:
     String name = (String) id;
     SemanticChecker.checkExists(name);
-    SemanticChecker.checkTypeCompatibility(name, SemanticChecker.inferPostfixType(expr));
+    SemanticChecker.checkAssignmentTypeCompatibility(name, SemanticChecker.inferPostfixType(expr));
     IntermediateCode.emitAssign(name, expr);
     System.out.println("Assignment: " + id + " = (expr)");
 :};
@@ -241,6 +241,9 @@ cond_atom ::= simple_condition:cond {: RESULT = cond; :}
             ;
 
 simple_condition ::= expression:left comp_op:op expression:right {:
+    String leftExpressionType = SemanticChecker.inferPostfixType(left);
+    String rightExpressionType = SemanticChecker.inferPostfixType(right);
+    SemanticChecker.checkConditionTypeCompatibility(leftExpressionType, rightExpressionType);
     RESULT = left + " " + right + " " + op;
 :};
 
