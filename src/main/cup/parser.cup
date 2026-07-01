@@ -78,6 +78,7 @@ non terminal String factor_u;
 non terminal String factor;
 non terminal String condition;
 non terminal String cond_and;
+non terminal String cond_or;
 non terminal String cond_not;
 non terminal String cond_atom;
 non terminal String simple_condition;
@@ -183,8 +184,6 @@ special_while_sent ::= WHILE_SPECIAL IDENTIFIER:id IN OPEN_SQUARE_BRACKET expr_l
     
     List<String> values = (List<String>) vals;
     for (int index = 1; index < values.size(); index++) {
-        //if(@i==1)
-
         IntermediateCode.addLine("@i " + index + " CMP BNE " + (lastLine + 5)); 
         String nextExpression = values.get(index);
         IntermediateCode.addLine("" + nextExpression + " " + id + ":="); 
@@ -215,32 +214,29 @@ write_sent ::= WRITE OPEN_BRACKET expression:expr CLOSE_BRACKET {:
     System.out.println("Write");
 :};
 
-condition ::= condition:left OR cond_and:right {:
-    System.out.println("Operator: OR");
-    RESULT = left + " " + right + " OR";
-:}
-| cond_and:expr {: RESULT = expr; :}
-;
+cond_not ::= NOT simple_condition:cond {:
+    System.out.println("Operator: NOT");
+    RESULT = cond + " NOT";
+:};
 
-cond_and ::= cond_and:left AND cond_not:right {:
+cond_and ::= simple_condition:left AND simple_condition:right {:
     System.out.println("Operator: AND");
     RESULT = left + " " + right + " AND";
-:}
-| cond_not:expr {: RESULT = expr; :}
-;
+:};
 
-cond_not ::= NOT cond_not:operand {:
-    System.out.println("Operator: NOT");
-    RESULT = operand + " NOT";
-:} %prec UMINUS
-| cond_atom:expr {: RESULT = expr; :}
-;
+cond_or ::= simple_condition:left OR simple_condition:right {:
+    System.out.println("Operator: OR");
+    RESULT = left + " " + right + " OR";
+:};
 
-cond_atom ::= simple_condition:cond {: RESULT = cond; :}
-            | OPEN_BRACKET condition:cond CLOSE_BRACKET {: RESULT = cond; :}
-            ;
+condition ::= simple_condition:c {: System.out.println("condition -> simple_condition"); RESULT = c; :}
+        | cond_not:c {: System.out.println("condition -> cond_not"); RESULT = c; :}
+        | cond_and:c {: System.out.println("condition -> cond_and"); RESULT = c; :}
+        | cond_or:c {: System.out.println("condition -> cond_or"); RESULT = c; :}
+        ;
 
 simple_condition ::= expression:left comp_op:op expression:right {:
+    System.out.println("simple_condition -> expression op expression");
     String leftExpressionType = SemanticChecker.inferPostfixType(left);
     String rightExpressionType = SemanticChecker.inferPostfixType(right);
     SemanticChecker.checkConditionTypeCompatibility(leftExpressionType, rightExpressionType);
