@@ -51,20 +51,66 @@ public class IntermediateCode {
     }
 
     // condicion en postfija + salto, guardamos en la pila para completar despues
-    public static void emitBranch(String cond) {
-        addLine(cond.trim());
-        String salto = BranchHelper.getBranch(cond);
-        int idx = addLine(salto + " ?");
-        pilaSaltos.push(idx);
+    public static void emitBranch(String cond) { // cond "a b > c b > AND"
+        String[] partes = cond.trim().split(" ");
+        String ultimaParte = partes[partes.length - 1]; // comparador o conector lógico
+        String branchInstruction = BranchHelper.getBranchInstruction(ultimaParte);
+
+        if(branchInstruction != null) {
+            // simple condition
+            addLine(cond);
+            int idx = addLine(branchInstruction + " ?");
+            pilaSaltos.push(idx);
+
+        } else if (ultimaParte.equals("NOT")) {
+            String updatedCond = cond.substring(0, cond.length() - 4);
+            addLine(updatedCond);
+            branchInstruction = BranchHelper.getBranchInstruction(partes[partes.length - 2]);
+            int idx = addLine(BranchHelper.getOppositeBranchInstruction(branchInstruction) + " ?");
+            pilaSaltos.push(idx);
+
+        } else if(ultimaParte.equals("AND")) {
+            int firstComparatorPosition = BranchHelper.getFirstComparatorPosition(cond);
+            String condition = cond.substring(0, firstComparatorPosition + 1);
+            addLine(condition);
+            branchInstruction = BranchHelper.getBranchInstruction(BranchHelper.extractComparator(condition));
+            addLine(branchInstruction + " ?");
+           
+            condition = cond.substring(firstComparatorPosition + 2, cond.length() - 4);
+            addLine(condition);
+            branchInstruction = BranchHelper.getBranchInstruction(partes[partes.length - 2]);
+            int idx = addLine(branchInstruction + " ?");
+            pilaSaltos.push(idx);
+            pilaSaltos.push(idx);
+
+        } else if(ultimaParte.equals("OR")) {
+            int firstComparatorPosition = BranchHelper.getFirstComparatorPosition(cond);
+            String condition = cond.substring(0, firstComparatorPosition + 1);
+            int idx = addLine(condition);
+            branchInstruction = BranchHelper.getBranchInstruction(BranchHelper.extractComparator(condition));
+            addLine(BranchHelper.getOppositeBranchInstruction(branchInstruction) + " " + (idx + 5));
+           
+            condition = cond.substring(firstComparatorPosition + 2, cond.length() - 3);
+            addLine(condition);
+            branchInstruction = BranchHelper.getBranchInstruction(partes[partes.length - 2]);
+            idx = addLine(branchInstruction + " ?");
+            pilaSaltos.push(idx);
+        }
     }
 
     public static void closeIfWithoutElse() {
         int idx = pilaSaltos.pop();
+        if(!pilaSaltos.isEmpty() && pilaSaltos.peek() == idx) {
+            patchLine(idx - 2, lines.size() + 1);
+        }
         patchLine(idx, lines.size() + 1);
     }
 
     public static void closeIfThenForElse() {
         int idx = pilaSaltos.pop();
+        if(!pilaSaltos.isEmpty() && pilaSaltos.peek() == idx) {
+            patchLine(idx - 2, lines.size() + 2);
+        }
         int bi = addLine("BI ?");
         patchLine(idx, lines.size() + 1);
         pilaSaltos.push(bi);
@@ -83,6 +129,9 @@ public class IntermediateCode {
         int et = pilaWhile.pop();
         addLine("BI " + (et + 1));
         int idx = pilaSaltos.pop();
+        if(!pilaSaltos.isEmpty() && pilaSaltos.peek() == idx) {
+            patchLine(idx - 2, lines.size() + 1);
+        }
         patchLine(idx, lines.size() + 1);
         addLine("FIN");
     }

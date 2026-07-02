@@ -229,14 +229,13 @@ cond_or ::= simple_condition:left OR simple_condition:right {:
     RESULT = left + " " + right + " OR";
 :};
 
-condition ::= simple_condition:c {: System.out.println("condition -> simple_condition"); RESULT = c; :}
-        | cond_not:c {: System.out.println("condition -> cond_not"); RESULT = c; :}
-        | cond_and:c {: System.out.println("condition -> cond_and"); RESULT = c; :}
-        | cond_or:c {: System.out.println("condition -> cond_or"); RESULT = c; :}
+condition ::= simple_condition:c {: RESULT = c; :}
+        | cond_not:c {: RESULT = c; :}
+        | cond_and:c {: RESULT = c; :}
+        | cond_or:c {: RESULT = c; :}
         ;
 
 simple_condition ::= expression:left comp_op:op expression:right {:
-    System.out.println("simple_condition -> expression op expression");
     String leftExpressionType = SemanticChecker.inferPostfixType(left);
     String rightExpressionType = SemanticChecker.inferPostfixType(right);
     SemanticChecker.checkConditionTypeCompatibility(leftExpressionType, rightExpressionType);
@@ -285,15 +284,12 @@ term ::= term:term1 MULT factor_u:factor1 {:
 ;
 
 factor_u ::= SUB factor:factor1 {:
-    System.out.println("factor_u -> - factor");
     RESULT = "0 " + factor1 + " -";
 :} %prec UMINUS
 | PLUS factor:factor1 {:
-    System.out.println("factor_u -> + factor");
     RESULT = factor1;
 :} %prec UMINUS
 | factor:factor1 {:
-    System.out.println("factor_u -> factor");
     RESULT = factor1;
 :}
 ;
