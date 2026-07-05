@@ -7,13 +7,56 @@ public class SymbolEntry {
     private String value;
     private Integer length;
 
-    public SymbolEntry(String name, SymbolType type) {
+    private SymbolEntry(String name, SymbolType type, String value, Integer length) {
         this.name = name;
         this.type = type;
+        this.value = value;
+        this.length = length;
+    }
+
+    public static SymbolEntry newStringConstantEntry(String value) {
+        String name = value.substring(1, value.length() - 2).replace(" ", "_");
+        return new SymbolEntry(
+            "_" + name, 
+            SymbolType.STRING, 
+            value, 
+            value.length() - 2
+        );
+    }
+    
+    public static SymbolEntry newIntConstantEntry(String value) {
+        return new SymbolEntry(
+            "_" + value, 
+            SymbolType.INT, 
+            value, 
+            null
+        );
+    }
+
+    public static SymbolEntry newFloatConstantEntry(String value) {
+        return new SymbolEntry(
+            "_" + value, 
+            SymbolType.FLOAT, 
+            value, 
+            null
+        );
+    }
+
+    public static SymbolEntry newEntry(String name, SymbolType type) {
+        return new SymbolEntry(
+            name, 
+            type, 
+            null, 
+            null
+        );
     }
 
     public String getName() {
         return name;
+    }
+
+    public SymbolType getType() {
+        return type;
     }
 
     public String getValue() {
@@ -27,32 +70,14 @@ public class SymbolEntry {
         return length;
     }
 
-    public void setValue(String value) {
-        this.value = value;
-        if (type == SymbolType.STRING && value != null) {
-            if (value.startsWith("\"") && value.endsWith("\"")) {
-                length = value.length() - 2;
-            } else {
-                length = value.length();
-            }
-        }
-    }
-
     public String getTypeLabel() {
-        if (type == SymbolType.INT) return "Int";
-        if (type == SymbolType.FLOAT) return "Float";
-        if (type == SymbolType.STRING) return "String";
+        if (type == SymbolType.INT) return isConstant()? "Int_cte" : "Int";
+        if (type == SymbolType.FLOAT) return isConstant()? "Float_cte" : "Float";
+        if (type == SymbolType.STRING) return isConstant()? "String_cte" : "String";
         return "-";
     }
 
-    public String getConstantTypeLabel() {
-        if (type == SymbolType.INT) return "CTE_INTEGER";
-        if (type == SymbolType.FLOAT) return "CTE_FLOAT";
-        if (type == SymbolType.STRING) return "CTE_STRING";
-        return getTypeLabel();
-    }
-
     public boolean isConstant() {
-        return value != null;
+        return name.charAt(0) == '_';
     }
 }

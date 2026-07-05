@@ -105,8 +105,8 @@ decl ::= id_list:ids COLON type:t {:
     List<String> varList = (List<String>) ids;
     for (String variableName : varList) {
         SemanticChecker.declare(variableName, typeName);
-        SymbolEntry entry = new SymbolEntry(variableName, t);
-        SymbolTable.getInstance().add(entry);
+        SymbolEntry e = SymbolEntry.newEntry(variableName, t);
+        SymbolTable.getInstance().add(e);
         System.out.println("Variable added to table: " + variableName + " (" + typeName + ")");
     }
     System.out.println("Type: " + typeName);
@@ -303,9 +303,8 @@ factor ::= IDENTIFIER:id {:
 | INTEGER_CONSTANT:c {:
     String val = (String) c;
     System.out.println("Integer: " + val);
-    if (!SymbolTable.getInstance().contains(val)) {
-        SymbolEntry e = new SymbolEntry(val, SymbolType.INT);
-        e.setValue(val);
+    SymbolEntry e = SymbolEntry.newIntConstantEntry(val);
+    if (!SymbolTable.getInstance().contains(e.getName())) {
         SymbolTable.getInstance().add(e);
     }
     RESULT = val;
@@ -313,9 +312,8 @@ factor ::= IDENTIFIER:id {:
 | FLOAT_CONSTANT:c {:
     String val = (String) c;
     System.out.println("Float: " + val);
-    if (!SymbolTable.getInstance().contains(val)) {
-        SymbolEntry e = new SymbolEntry(val, SymbolType.FLOAT);
-        e.setValue(val);
+    SymbolEntry e = SymbolEntry.newFloatConstantEntry(val);
+    if (!SymbolTable.getInstance().contains(e.getName())) {
         SymbolTable.getInstance().add(e);
     }
     RESULT = val;
@@ -323,9 +321,8 @@ factor ::= IDENTIFIER:id {:
 | STRING_CONSTANT:c {:
     String val = (String) c;
     System.out.println("String: " + val);
-    if (!SymbolTable.getInstance().contains(val)) {
-        SymbolEntry e = new SymbolEntry(val, SymbolType.STRING);
-        e.setValue(val);
+    SymbolEntry e = SymbolEntry.newStringConstantEntry(val);
+    if (!SymbolTable.getInstance().contains(e.getName())) {
         SymbolTable.getInstance().add(e);
     }
     RESULT = val;
