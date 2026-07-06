@@ -4,11 +4,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Collection;
+import lyc.compiler.model.SymbolEntry;
+import lyc.compiler.model.SymbolType;
+import lyc.compiler.model.SymbolTable;
 
 public final class SemanticChecker {
 
+    private static Set<String> arithmeticOperators = Set.of("+", "-", "*", "/", "MOD", "DIV");
     private static final Map<String, String> variables = new HashMap<>();
-    private static final Set<String> declaredInInit = new HashSet<>();
     private static boolean hasErrors = false;
     private static boolean activo = true;
 
@@ -18,109 +24,94 @@ public final class SemanticChecker {
         activo = valor;
     }
 
-    public static void declare(String name, String type) {
+    public static void declare(String name) {
         if (!activo) return;
-        if (declaredInInit.contains(name)) {
+        SymbolEntry entry = findEntryByName(name);
+        if (entry != null) {
             error("Variable '" + name + "' already declared");
             return;
         }
-        declaredInInit.add(name);
-        variables.put(name, type);
     }
 
-    public static void checkExists(String name) {
-        if (!activo) return;
-        if (!variables.containsKey(name)) {
+    public static SymbolEntry checkExists(String name) {
+        if (!activo) return null;
+        SymbolEntry entry = findEntryByName(name);
+        if (entry == null) {
             error("Variable '" + name + "' not declared");
         }
+        return entry;
     }
 
-    public static void checkAssignmentTypeCompatibility(String varName, String exprType) {
+    public static void checkAssignmentTypeCompatibility(SymbolEntry entry, SymbolType exprType) {
         if (!activo) return;
-        if (!variables.containsKey(varName)) {
+        SymbolType targetType = entry.getType();
+        if (targetType == exprType || (SymbolType.FLOAT == targetType && SymbolType.INT == exprType)) {
             return;
         }
-        String targetType = variables.get(varName);
-        if (targetType == null || exprType == null || "-".equals(exprType)) {
-            return;
-        }
-        if (targetType.equals(exprType) || "Float".equals(targetType) && "Int".equals(exprType)) {
-            return;
-        }
-        error("Type incompatibility: cannot assign type " + exprType + " to variable of type " + targetType);
+        error("Type incompatibility: cannot assign type " + exprType + " to variable " + entry.getName() + " of type " + targetType);
     }
 
-    public static void checkConditionTypeCompatibility(String exprType1, String exprType2) {
+    public static void checkConditionTypeCompatibility(SymbolType exprType1, SymbolType exprType2) {
         if (!activo) return;
-        if (exprType1.equals(exprType2)) return;
+        if (exprType1 == exprType2) return;
         error("Type incompatibility in condition: cannot compare " + exprType1 + " with " + exprType2);
     }
 
     public static void checkDivisionByZero(String operandPostfix) {
         if (!activo) return;
-        if (operandPostfix == null) {
-            return;
+        SymbolEntry entry = findEntryByName(operandPostfix);
+        if (entry.getType() != SymbolType.STRING && entry.getValue() != null) {
+            if (Double.parseDouble(entry.getValue()) == 0.0) {
+                error("Division by zero");
+            }
         }
-        String trimmed = operandPostfix.trim();
-        if (trimmed.matches("-?\\d+(\\.\\d+)?")) {
-            try {
-                if (Double.parseDouble(trimmed) == 0.0) {
-                    error("Division by zero");
+    }
+
+    public static SymbolType inferPostfixType(String expr) {
+        if (!activo) return null;
+        List<String> cells = Arrays.asList(expr.split(" "));
+        SymbolEntry firstEntry = findEntryByName(cells.get(0));
+        SymbolType type = firstEntry.getType();
+        for (int i = 1; i < cells.size(); i++) {
+            String cell = cells.get(i);
+            if (!isArithmeticOperator(cell)) {
+                SymbolEntry entry = findEntryByName(cells.get(i));
+                if (entry.getType() != null) {
+                    if (entry.getType() == SymbolType.STRING) {
+                        error("Type incompatibility: cannot apply operation between " + firstEntry.getNameLabel() + " and " + entry.getNameLabel());
+                        return null;
+                    }
+                    if (entry.getType() == SymbolType.FLOAT) {
+                        type = SymbolType.FLOAT;
+                    }
                 }
-            } catch (NumberFormatException ignored) {
             }
         }
+        return type;
     }
 
-    public static String inferPostfixType(String postfix) {
-        if (postfix == null || postfix.isBlank()) {
-            return "-";
-        }
-        String[] tokens = postfix.trim().split("\\s+");
-        if (tokens.length == 1) {
-            return inferAtomType(tokens[0]);
-        }
-        return inferExpressionTypeFromPostfix(tokens);
+    private static boolean isArithmeticOperator(String text) {
+        return arithmeticOperators.contains(text);
     }
 
-    private static String inferExpressionTypeFromPostfix(String[] tokens) {
-        boolean hasFloat = false;
-        for (String token : tokens) {
-            if (isOperator(token)) {
-                continue;
-            }
-            String type = inferAtomType(token);
-            if ("Float".equals(type)) {
-                hasFloat = true;
-            }
-            if ("String".equals(type)) {
-                return "String";
+    private static SymbolEntry findEntryByName(String name) {
+        Collection<SymbolEntry> entries = SymbolTable.getInstance().getAll();
+        for (SymbolEntry e : entries) {
+            if (e.getName().equals(name)) {
+                return e;
             }
         }
-        return hasFloat ? "Float" : "Int";
+        return null;
     }
 
-    private static boolean isOperator(String token) {
-        return Set.of("+", "-", "*", "/", "MOD", "DIV", "<", "<=", ">", ">=", "==", "!=", "AND", "OR", "NOT")
-                .contains(token);
-    }
-
-    private static String inferAtomType(String token) {
-        if (variables.containsKey(token)) {
-            return variables.get(token);
+    private static SymbolEntry findEntryByValue(String value) {
+        Collection<SymbolEntry> entries = SymbolTable.getInstance().getAll();
+        for (SymbolEntry e : entries) {
+            if (e.getValue().equals(value)) {
+                return e;
+            }
         }
-        if (token.startsWith("\"")) {
-            return "String";
-        }
-        if (token.contains(".")) {
-            return "Float";
-        }
-        try {
-            Integer.parseInt(token);
-            return "Int";
-        } catch (NumberFormatException e) {
-            return "-";
-        }
+        return null;
     }
 
     private static void error(String message) {
@@ -134,8 +125,6 @@ public final class SemanticChecker {
     }
 
     public static void clear() {
-        variables.clear();
-        declaredInInit.clear();
         hasErrors = false;
     }
 }

@@ -104,12 +104,11 @@ decl ::= id_list:ids COLON type:t {:
     String typeName = t == SymbolType.FLOAT ? "Float" : (t == SymbolType.INT ? "Int" : "String");
     List<String> varList = (List<String>) ids;
     for (String variableName : varList) {
-        SemanticChecker.declare(variableName, typeName);
         SymbolEntry e = SymbolEntry.newEntry(variableName, t);
+        SemanticChecker.declare(e.getName());
         SymbolTable.getInstance().add(e);
-        System.out.println("Variable added to table: " + variableName + " (" + typeName + ")");
+        System.out.println("Variable added to table: " + e.getName() + " (" + typeName + ")");
     }
-    System.out.println("Type: " + typeName);
     System.out.println("Variable declaration with type: " + typeName);
 :};
 
@@ -143,8 +142,8 @@ sent ::= assignment_sent
 
 assignment_sent ::= IDENTIFIER:id ASSIG expression:expr {:
     String name = (String) id;
-    SemanticChecker.checkExists(name);
-    SemanticChecker.checkAssignmentTypeCompatibility(name, SemanticChecker.inferPostfixType(expr));
+    SymbolEntry entry = SemanticChecker.checkExists(name);
+    SemanticChecker.checkAssignmentTypeCompatibility(entry, SemanticChecker.inferPostfixType(expr));
     IntermediateCode.emitAssign(name, expr);
     System.out.println("Assignment: " + id + " = (expr)");
 :};
@@ -236,8 +235,8 @@ condition ::= simple_condition:c {: RESULT = c; :}
         ;
 
 simple_condition ::= expression:left comp_op:op expression:right {:
-    String leftExpressionType = SemanticChecker.inferPostfixType(left);
-    String rightExpressionType = SemanticChecker.inferPostfixType(right);
+    SymbolType leftExpressionType = SemanticChecker.inferPostfixType(left);
+    SymbolType rightExpressionType = SemanticChecker.inferPostfixType(right);
     SemanticChecker.checkConditionTypeCompatibility(leftExpressionType, rightExpressionType);
     RESULT = left + " " + right + " " + op;
 :};
@@ -307,7 +306,7 @@ factor ::= IDENTIFIER:id {:
     if (!SymbolTable.getInstance().contains(e.getName())) {
         SymbolTable.getInstance().add(e);
     }
-    RESULT = val;
+    RESULT = e.getName();
 :}
 | FLOAT_CONSTANT:c {:
     String val = (String) c;
@@ -316,7 +315,7 @@ factor ::= IDENTIFIER:id {:
     if (!SymbolTable.getInstance().contains(e.getName())) {
         SymbolTable.getInstance().add(e);
     }
-    RESULT = val;
+    RESULT = e.getName();
 :}
 | STRING_CONSTANT:c {:
     String val = (String) c;
@@ -325,7 +324,7 @@ factor ::= IDENTIFIER:id {:
     if (!SymbolTable.getInstance().contains(e.getName())) {
         SymbolTable.getInstance().add(e);
     }
-    RESULT = val;
+    RESULT = e.getName();
 :}
 | OPEN_BRACKET expression:expr CLOSE_BRACKET {: RESULT = expr; :}
 ;
