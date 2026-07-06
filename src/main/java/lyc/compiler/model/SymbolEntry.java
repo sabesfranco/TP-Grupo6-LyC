@@ -85,6 +85,13 @@ public class SymbolEntry {
         return "-";
     }
 
+    public String getNameLabel() {
+        if (type == SymbolType.INT) return isConstant()? value : name;
+        if (type == SymbolType.FLOAT) return isConstant()? value : name;
+        if (type == SymbolType.STRING) return isConstant()? value : name;
+        return "-";
+    }
+
     public boolean isConstant() {
         return name.charAt(0) == '_';
     }
