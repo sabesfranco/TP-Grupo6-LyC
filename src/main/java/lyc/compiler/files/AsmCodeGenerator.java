@@ -33,7 +33,7 @@ public class AsmCodeGenerator implements FileGenerator {
     
     private void generateHeader() throws IOException {
         asmBuffer.write(
-                "include number.asm\ninclude macros2.asm\n\n" +
+                "include number.asm\ninclude macros.asm\n\n" +
                         ".MODEL LARGE ;Modelo de Memoria\n" +
                         ".386 ;Tipo de Procesador\n" +
                         ".STACK 200h ;Bytes en el Stack\n\n" + 
@@ -71,8 +71,13 @@ public class AsmCodeGenerator implements FileGenerator {
         return null;
     }
 
+    private void generateCodeForArithmeticOperation() {
+        // fld
+    }
+
     private void generateCodeSection() throws IOException {
-        asmBuffer.write("\nSTART:\n");
+        asmBuffer.write("\n.CODE");
+        asmBuffer.write("\n\nSTART:");
         List<String> lines = IntermediateCode.getLines();
 
         Boolean assign = false;
@@ -81,8 +86,33 @@ public class AsmCodeGenerator implements FileGenerator {
         Boolean si_reg = false;
 
         for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+            asmBuffer.write("\n");
             List<String> cells = Arrays.asList(lines.get(lineIndex).split(" "));
-            for (int c = 0; c < cells.size(); c++) {
+            String lastCell = cells.get(cells.size() - 1);
+            if (lastCell.equals(":=")) {
+                String identificator = cells.get(cells.size() - 2);
+                SymbolEntry entry = findEntryByName(identificator);
+                if (entry != null && entry.getType() == SymbolType.STRING) {
+                    //mov SI, OFFSET _cadena
+                    //mov DI, OFFSET s1
+                    //mov CX, 0
+                    //STRCPY 0
+                    asmBuffer.write("\tmov SI, offset " + cells.get(0) + '\n');
+                    asmBuffer.write("\tmov DI, offset " + entry.getName() + '\n');
+                    asmBuffer.write("\tmov CX, 0\n");
+                    asmBuffer.write("\tSTRCPY 0\n");
+                } else if (entry != null) {
+                    if (cells.size() == 3) {
+                        asmBuffer.write("\tFLD " + cells.get(0) + '\n');
+                    } else {
+                        generateCodeForArithmeticOperation(); // result on FLD
+                    }
+                    asmBuffer.write("\tFSTP " + entry.getName() + '\n');
+                }
+            }
+
+
+            for (int c = 0; c < 0; c++) {//for (int c = 0; c < cells.size(); c++) {
                 String cell = cells.get(c);
 
                 // Si la celda es un punto de salto, creamos la etiqueta.
