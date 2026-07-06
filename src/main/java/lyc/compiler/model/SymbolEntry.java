@@ -15,7 +15,7 @@ public class SymbolEntry {
     }
 
     public static SymbolEntry newStringConstantEntry(String value) {
-        String name = value.substring(1, value.length() - 2).replace(" ", "_");
+        String name = value.substring(1, value.length() - 1).replaceAll("[^A-Za-z0-9_]", "_");
         return new SymbolEntry(
             "_" + name, 
             SymbolType.STRING, 
@@ -34,10 +34,18 @@ public class SymbolEntry {
     }
 
     public static SymbolEntry newFloatConstantEntry(String value) {
+        String normalizedValue = null;
+        if (value.startsWith(".")) {
+            normalizedValue = "0" + value;
+        } else if (value.endsWith(".")) {
+            normalizedValue = value + "0";
+        } else {
+            normalizedValue = value;
+        }
         return new SymbolEntry(
-            "_" + value, 
+            "_" + normalizedValue.replace('.', '_'), 
             SymbolType.FLOAT, 
-            value, 
+            normalizedValue, 
             null
         );
     }

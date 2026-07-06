@@ -49,22 +49,27 @@ public class IntermediateCode {
     public static void emitWrite(String expr) {
         addLine(expr.trim() + " write");
     }
+    
+    private static String replaceComparatorWithCMP(String cond) {
+        String comparator = BranchHelper.extractComparator(cond);
+        return cond.substring(0, cond.length() - comparator.length()) + "CMP";
+    }
 
     // condicion en postfija + salto, guardamos en la pila para completar despues
-    public static void emitBranch(String cond) { // cond "a b > c b > AND"
+    public static void emitBranch(String cond) {
         String[] partes = cond.trim().split(" ");
         String ultimaParte = partes[partes.length - 1]; // comparador o conector lógico
         String branchInstruction = BranchHelper.getBranchInstruction(ultimaParte);
 
         if(branchInstruction != null) {
             // simple condition
-            addLine(cond);
+            addLine(replaceComparatorWithCMP(cond));
             int idx = addLine(branchInstruction + " ?");
             pilaSaltos.push(idx);
 
         } else if (ultimaParte.equals("NOT")) {
             String updatedCond = cond.substring(0, cond.length() - 4);
-            addLine(updatedCond);
+            addLine(replaceComparatorWithCMP(updatedCond));
             branchInstruction = BranchHelper.getBranchInstruction(partes[partes.length - 2]);
             int idx = addLine(BranchHelper.getOppositeBranchInstruction(branchInstruction) + " ?");
             pilaSaltos.push(idx);
@@ -72,12 +77,12 @@ public class IntermediateCode {
         } else if(ultimaParte.equals("AND")) {
             int firstComparatorPosition = BranchHelper.getFirstComparatorPosition(cond);
             String condition = cond.substring(0, firstComparatorPosition + 1);
-            addLine(condition);
+            addLine(replaceComparatorWithCMP(condition));
             branchInstruction = BranchHelper.getBranchInstruction(BranchHelper.extractComparator(condition));
             addLine(branchInstruction + " ?");
            
             condition = cond.substring(firstComparatorPosition + 2, cond.length() - 4);
-            addLine(condition);
+            addLine(replaceComparatorWithCMP(condition));
             branchInstruction = BranchHelper.getBranchInstruction(partes[partes.length - 2]);
             int idx = addLine(branchInstruction + " ?");
             pilaSaltos.push(idx);
@@ -86,12 +91,12 @@ public class IntermediateCode {
         } else if(ultimaParte.equals("OR")) {
             int firstComparatorPosition = BranchHelper.getFirstComparatorPosition(cond);
             String condition = cond.substring(0, firstComparatorPosition + 1);
-            int idx = addLine(condition);
+            int idx = addLine(replaceComparatorWithCMP(condition));
             branchInstruction = BranchHelper.getBranchInstruction(BranchHelper.extractComparator(condition));
             addLine(BranchHelper.getOppositeBranchInstruction(branchInstruction) + " " + (idx + 5));
            
             condition = cond.substring(firstComparatorPosition + 2, cond.length() - 3);
-            addLine(condition);
+            addLine(replaceComparatorWithCMP(condition));
             branchInstruction = BranchHelper.getBranchInstruction(partes[partes.length - 2]);
             idx = addLine(branchInstruction + " ?");
             pilaSaltos.push(idx);

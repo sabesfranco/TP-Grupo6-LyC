@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Arrays;
 import java.util.List;
 import lyc.compiler.utils.IntermediateCode;
 import lyc.compiler.ParserSym;
@@ -54,18 +55,26 @@ public class AsmCodeGenerator implements FileGenerator {
                 valueToDefine = entry.isConstant()? entry.getValue() : "?";
             }
             asmBuffer.write(String.format(format, name, typeToDefine, valueToDefine));
-            asmBuffer.write("\n\n");
         }
     }
 
     private void generateCodeSection() throws IOException {
+        asmBuffer.write("\nSTART:");
         List<String> lines = IntermediateCode.getLines();
-        for (int i = 0; i < lines.size(); i++) {
-            asmBuffer.write("\n" + lines.get(i)); // TODO
+        for (int l = 0; l < lines.size(); l++) {
+            List<String> cells = Arrays.asList(lines.get(l).split(" "));
+            for (int c = 0; c < cells.size(); c++) {
+                String cell = cells.get(c);
+                asmBuffer.write("\n" + generateInstruction());
+            }
         }
     }
 
+    private String generateInstruction() {
+
+    }
+
     private void generateFooter() throws IOException {
-        asmBuffer.write("\nend_main:\n\tMOV EAX, 4C00h\n\tINT 21h\n\nEND main");
+        asmBuffer.write("\n\tMOV EAX, 4C00h\n\tINT 21h\n\nEND START");
     }
 }
