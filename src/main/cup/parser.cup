@@ -173,9 +173,9 @@ special_while_sent ::= WHILE_SPECIAL IDENTIFIER:id IN OPEN_SQUARE_BRACKET expr_l
                        {:
     String name = (String) id;
     SemanticChecker.checkExists(name);
-    IntermediateCode.addLine("" +0 + " @i :=");
+    IntermediateCode.addLine("" + 0 + " @i :=");
     String firstExpression = (String) vals.get(0);
-    IntermediateCode.addLine("" + firstExpression + " " + id + ":="); 
+    IntermediateCode.addLine("" + firstExpression + " " + id + " :=");
     IntermediateCode.beginWhileSpecial(); // ET
     System.out.println("WHILE IN loop for: " + name);
     :} DO sent_list ENDWHILE {: 
@@ -185,7 +185,7 @@ special_while_sent ::= WHILE_SPECIAL IDENTIFIER:id IN OPEN_SQUARE_BRACKET expr_l
     for (int index = 1; index < values.size(); index++) {
         IntermediateCode.addLine("@i " + index + " CMP BNE " + (lastLine + 5)); 
         String nextExpression = values.get(index);
-        IntermediateCode.addLine("" + nextExpression + " " + id + ":="); 
+        IntermediateCode.addLine("" + nextExpression + " " + id + " :=");
         lastLine = IntermediateCode.addLine("BI " + IntermediateCode.peekWhileSpecial()); 
     }
     IntermediateCode.endWhileSpecial();
