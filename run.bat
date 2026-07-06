@@ -11,21 +11,17 @@ if errorlevel 1 (
 )
 
 echo [2/4] Copiando archivos ASM...
-COPY /Y target\output\final.asm target\asm\final.asm >nul
+COPY /Y target\output\final.asm src\main\resources\asm\final.asm >nul
 COPY /Y src\main\resources\asm\macros2.asm target\asm\macros2.asm >nul
 COPY /Y src\main\resources\asm\number.asm  target\asm\number.asm  >nul
 
 echo [3/4] Ensamblando y ejecutando en DOSBox...
 (
     echo [autoexec]
-    echo mount c "%CD%\target\asm"
-    echo mount t "C:\Program Files (x86)\GUI Turbo Assembler\BIN"
+    echo mount c "%CD%\src\main\resources\asm"
     echo c:
-    echo t:\tasm final.asm
-    echo pause
-    echo t:\tlink final.obj
-    echo pause
-    echo final.exe
+    echo run.bat
+    echo exit
 ) > dosbox_temp.conf
 
 "C:\Program Files (x86)\DOSBox-0.74-3\DOSBox.exe" -conf dosbox_temp.conf
@@ -33,4 +29,3 @@ del dosbox_temp.conf
 
 echo [4/4] Listo.
 popd
-pause
