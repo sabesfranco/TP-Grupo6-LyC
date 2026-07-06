@@ -1,3 +1,36 @@
-echo "Compiling run.txt"
-java "-jar" "target\lyc-compiler-2.0.0.jar" "target\input\test.txt"
-COPY  "target\output\final.asm" "target\asm\final.asm"
+@echo off
+pushd "%~dp0"
+
+echo [1/4] Compilando con Java...
+java -jar target\lyc-compiler-3.0.0.jar src\main\resources\input\test.txt
+if errorlevel 1 (
+    echo ERROR: Fallo la compilacion Java.
+    popd
+    pause
+    exit /b 1
+)
+
+echo [2/4] Copiando archivos ASM...
+COPY /Y target\output\final.asm target\asm\final.asm >nul
+COPY /Y src\main\resources\asm\macros2.asm target\asm\macros2.asm >nul
+COPY /Y src\main\resources\asm\number.asm  target\asm\number.asm  >nul
+
+echo [3/4] Ensamblando y ejecutando en DOSBox...
+(
+    echo [autoexec]
+    echo mount c "%CD%\target\asm"
+    echo mount t "C:\Program Files (x86)\GUI Turbo Assembler\BIN"
+    echo c:
+    echo t:\tasm final.asm
+    echo pause
+    echo t:\tlink final.obj
+    echo pause
+    echo final.exe
+) > dosbox_temp.conf
+
+"C:\Program Files (x86)\DOSBox-0.74-3\DOSBox.exe" -conf dosbox_temp.conf
+del dosbox_temp.conf
+
+echo [4/4] Listo.
+popd
+pause
