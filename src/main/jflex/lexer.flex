@@ -174,14 +174,14 @@ StringConstant  = \"[^\"\r\n]*\" | \u201C[^\u201D\r\n]*\u201D
 
 <COMMENT> {
   "+#"                                      { yybegin(YYINITIAL); }
-  [^+\r\n]+                                 { /* ignore */ }
+  [^+\r\n@]+                                 { /* ignore */ }
   "+"                                       { /* ignore */ }
   {LineTerminator}                          { /* ignore */ }
 }
 
 <COMMENT_C> {
   "*/"                                      { yybegin(YYINITIAL); }
-  [^*\r\n]+                                 { /* ignore */ }
+  [^*\r\n@]+                                 { /* ignore */ }
   "*"                                       { /* ignore */ }
   {LineTerminator}                          { /* ignore */ }
 }
